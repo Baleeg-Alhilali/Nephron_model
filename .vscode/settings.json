@@ -1,0 +1,16 @@
+{
+    "git.ignoredRepositories": [
+        "/Users/alhilaba/UG4_promesh_ogrid/.ughub/sources/github-ug4",
+        "/Users/alhilaba/UG4_promesh_ogrid/externals/BoostForUG4",
+        "/Users/alhilaba/UG4_promesh_ogrid/externals/EigenForUG4",
+        "/Users/alhilaba/UG4_promesh_ogrid/plugins/ConvectionDiffusion",
+        "/Users/alhilaba/UG4_promesh_ogrid/plugins/Limex",
+        "/Users/alhilaba/UG4_promesh_ogrid/plugins/LuaShell",
+        "/Users/alhilaba/UG4_promesh_ogrid/plugins/NavierStokes",
+        "/Users/alhilaba/UG4_promesh_ogrid/plugins/ProMesh",
+        "/Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6",
+        "/Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu",
+        "/Users/alhilaba/UG4_promesh_ogrid/tools/tetgen",
+        "/Users/alhilaba/UG4_promesh_ogrid/ugcore"
+    ]
+}
