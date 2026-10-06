@@ -1,6 +1,9 @@
 #!/bin/zsh
 set -euo pipefail
 
+# launchd uses a minimal PATH; include Homebrew for git-lfs and GitHub CLI.
+export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
 readonly SOURCE_DIR="/Users/alhilaba/UG4_promesh_ogrid"
 readonly BACKUP_DIR="/Users/alhilaba/UG4_promesh_ogrid_backup"
 readonly BRANCH="ug4-build"
