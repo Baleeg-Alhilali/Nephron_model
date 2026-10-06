@@ -1,0 +1,162 @@
+/*
+ * Copyright (c) 2010-2012:  G-CSC, Goethe University Frankfurt
+ * Author: Andreas Vogel
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageLDAssembleInterface Assemble Interfaces
+
+The categorization of the PDE problems presented in 
+\ref pageLDCategorization "Categorization of Problems" 
+are realized by Interface classes in libDiscretization.
+
+- \ref secIAssemble "IAssemble Interface"
+- \ref secITimeDiscretization "ITimeDiscretization Interface"
+- \ref secIDomainDiscretization "IDomainDiscretization Interface"
+
+<br>
+
+<hr>
+\section secIAssemble IAssemble Interface
+<hr>
+
+The class ug::IAssemble implements the interface for 
+assembling, that can be used in a newton solver.
+
+\code
+template <	typename TDoFDistribution,
+			typename TAlgebra>
+class IAssemble {
+	public:
+		typedef TAlgebra algebra_type;
+		typedef typename TAlgebra::matrix_type matrix_type;
+		typedef typename TAlgebra::vector_type vector_type;
+		typedef IDoFDistribution<TDoFDistribution> dof_distribution_type;
+
+	public:
+		virtual IAssembleReturn assemble_jacobian(matrix_type& J,
+		                                          const vector_type& u,
+		                                          const dof_distribution_type& dofDistr)
+		{return false;}
+
+		virtual IAssembleReturn assemble_defect(vector_type& d,
+		                                        const vector_type& u,
+		                                        const dof_distribution_type& dofDistr)
+		{return false;}
+
+		virtual IAssembleReturn assemble_linear(matrix_type& A,
+		                                        vector_type& b,
+		                                        const dof_distribution_type& dofDistr)
+		{return false;}
+		virtual IAssembleReturn adjust_solution(vector_type& u,
+		                                          const dof_distribution_type& dofDistr)
+		{return false;}
+}
+\endcode
+
+<hr>
+\section secITimeDiscretization ITimeDiscretization Interface
+<hr>
+
+\code
+template <	typename TDoFDistribution,
+			typename TAlgebra>
+class ITimeDiscretization
+	: public IAssemble<TDoFDistribution, TAlgebra>
+{
+	public:
+		typedef IDoFDistribution<TDoFDistribution> dof_distribution_type;
+		typedef TAlgebra algebra_type;
+		typedef typename algebra_type::vector_type vector_type;
+		typedef IDomainDiscretization<TDoFDistribution, algebra_type>
+			domain_discretization_type;
+
+	public:
+		void set_domain_discretization(domain_discretization_type& dd);
+		domain_discretization_type* get_domain_discretization();
+
+		virtual bool prepare_step(std::deque<vector_type*>& u_old,
+		                          std::deque<number>& time_old,
+		                          number dt) = 0;
+
+	/// returns number of previous time steps needed
+		virtual size_t num_prev_steps() = 0;
+};
+
+\endcode
+
+<hr>
+\section secIDomainDiscretization IDomainDiscretization Interface
+<hr>
+
+\code
+template <	typename TDoFDistribution,
+			typename TAlgebra>
+class IDomainDiscretization : public IAssemble<TDoFDistribution, TAlgebra>{
+	public:
+		typedef IDoFDistribution<TDoFDistribution> dof_distribution_type;
+		typedef TAlgebra algebra_type;
+		typedef typename algebra_type::matrix_type matrix_type;
+		typedef typename algebra_type::vector_type vector_type;
+
+	public:
+		virtual
+		IAssembleReturn assemble_jacobian(matrix_type& J,
+		                                  const vector_type& u,
+		                                  const dof_distribution_type& dofDistr,
+		                                  number time, number s_m, number s_a)
+		{return false;}
+
+		virtual
+		IAssembleReturn assemble_defect(vector_type& d,
+		                                const vector_type& u,
+		                                const dof_distribution_type& dofDistr,
+		                                number time, number s_m, number s_a)
+		{return false;}
+
+		virtual
+		IAssembleReturn assemble_linear(matrix_type& A,
+		                                vector_type& b,
+		                                const dof_distribution_type& dofDistr,
+		                                number time, number s_m, number s_a)
+		{return false;}
+
+		virtual
+		IAssembleReturn adjust_solution(vector_type& u,
+		                                  const dof_distribution_type& dofDistr,
+		                                  number time)
+		{return false;}
+
+		virtual size_t num_constraints() const = 0;
+		virtual IConstraint<TDoFDistribution, TAlgebra>* constraint(size_t i) = 0;
+};
+
+\endcode
+
+ */

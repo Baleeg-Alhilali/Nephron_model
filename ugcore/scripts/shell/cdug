@@ -1,0 +1,40 @@
+#!/bin/bash
+######################################################################
+# cdug 1.0
+#-------------------------------------------------------------------
+# author: Stephan Grein, Martin Rupp
+######################################################################
+
+function cdug() {
+  if [ -z "$UG4_ROOT" ]; then
+      echo "Global shell variable \$UG4_ROOT not set."
+  elif [ ! -d "$UG4_ROOT" ]; then
+      echo "Global shell variable \$UG4_ROOT set but directory ($UG4_ROOT) does not exist."
+  else
+     if [ ! -z "$1" -a -d "$UG4_ROOT/$1" ]; then
+         cd "$UG4_ROOT/$1"
+     else
+         cd "$UG4_ROOT"
+      fi
+  fi
+}
+
+
+function ugupdate() {
+  cdug
+  svn update
+  cd -   
+}
+
+cdug_complete() {
+  local word="${COMP_WORDS[COMP_CWORD]}"
+  local i=0
+  while read line; do
+  	[[ -d $line ]] && COMPREPLY[i++]=`echo $line | sed -n "s?$UG4_ROOT[/]*??p"`/;
+  	done < <(compgen -f -- "$UG4_ROOT/$word")  
+}
+
+SHELLTYPE=`ps -o comm="" -p $$`
+if [[ "$SHELLTYPE" = *bash* ]]; then
+	complete -F cdug_complete -o nospace cdug
+fi

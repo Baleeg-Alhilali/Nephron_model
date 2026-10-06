@@ -1,0 +1,36 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/alhilaba/UG4_promesh_ogrid/build/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/ConvectionDiffusion/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/Limex/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/NavierStokes/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/ProMesh/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/SuperLU6/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/SuperLU6/external/superlu/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/SuperLU6/external/superlu/SRC/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/SuperLU6/external/superlu/EXAMPLE/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/SuperLU6/external/superlu/DOC/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/plugins/neuro_collection/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/tools/tetgen/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/compile_info/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/common/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/common/node_tree/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/lib_grid/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/registry/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/bindings/lua/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/lib_algebra/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/lib_algebra/common/matrixio/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/lib_disc/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/pcl/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/bridge/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/ug_shell/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/externals/BoostForUG4/libs/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/externals/BoostForUG4/libs/filesystem/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/externals/BoostForUG4/libs/serialization/cmake_install.cmake",
+		"/Users/alhilaba/UG4_promesh_ogrid/build/ugcore/ugbase/externals/BoostForUG4/libs/system/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

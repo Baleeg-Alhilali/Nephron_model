@@ -1,0 +1,222 @@
+/*
+ * Copyright (c) 2012-2014:  G-CSC, Goethe University Frankfurt
+ * Author: Ingo Heppner
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4ParallelJuQueen JuQueen
+
+- \ref secJuQueen
+- \ref secJuQueenAccount
+- \ref secAccess_to_JuQueens_login_nodes
+- \ref secEnvironmentOnJuQueensLoginNodes
+- \ref secConfiguration_of_ug4_for_JuQueen
+- \ref secWorking_with_ug4_on_JuQueen
+
+- \subpage pageUG4ParallelJuQueenMore
+
+<hr>
+\section secJuQueen Architecture
+
+<a href="http://www.fz-juelich.de/ias/jsc/EN/Expertise/Supercomputers/JUQUEEN/JUQUEEN_node.html">JuQueen</a>
+ currently provides 458.752 cores (448 Ki), with 1 GB RAM per core (total 448 Tbyte RAM)
+
+Juqueen consists of 28 racks: 1 Rack = 32 nodeboards, 1 Nodeboard = 16 Compute Nodes.
+
+Each Compute Node (CN) has a 16-core IBM PowerPC A2 running at 1.6 GHz with 16 Gbyte SDRAM-DDR3 of RAM in total or 1 Gbyte per core.
+
+\note Every core can execute four processes/threads,leaving 256 MB of RAM. However, since our applications are memory bound, this is NOT recommended.
+
+\note Keep in mind that in comparison to other clusters or current laptop processors, one PowerPC A2-core is slower.
+
+<hr>
+\section secJuQueenAccount Creating an account
+
+<ol>
+<li>get the project ID (note: not the project number) from someone like Sebastian, Andreas, Martin or Arne.</li>
+<li>goto <a href="https://dispatch.fz-juelich.de:8812/nic_account_ident/back=/RESSOURCEN">here</a>, enter email adress .
+<li>open the link in the email
+<li>enter the project id
+<li>enter name and stuff
+<li>generate ssh key in terminal with
+\code
+  ssh-keygen -b 2048 -t rsa
+  \endcode
+do NOT leave the passphrase empty! Remember your passphrase!
+</li>
+<li>upload id_rsa.pub. check "no" at will processed personal data... , Leave the DN of the user certificate . check none of the software packages, therefore leave out licence.
+<li>get the mail, print out pdf, sign (2 places), hand over to your professor.
+</ol>
+
+\subsection secJuQueenReset Resetting your ssh keys / password
+What to do if
+- You lost your id_rsa.pub, because it got deleted, overwritten or similar
+- You ssh keys are not valid anymore because you moved to another computer
+- You forgot your passphrase
+
+Solution: 
+<ol>
+<li>generate a ssh key with the commands above
+<li>Go to <a href="https://dispatch.fz-juelich.de:8812/upload_key_ident/back=/RESSOURCEN&xxlang=english">here</a>, follow the instructions and upload the id_rsa.pub
+</ol>
+
+<hr>
+\section secAccess_to_JuQueens_login_nodes Access to JuQueen's Login Nodes
+\em JuQueen is reached via so called <strong>front-end</strong> or 
+<strong>login nodes</strong>  for interactive access and the submission of batch jobs.
+
+These login nodes are reached via
+\code
+ssh <user>@juqueen.fz-juelich.de
+\endcode
+i.e., for login there is only a generic hostname, <tt>juqueen.fz-juelich.de</tt>,
+from which automatically a connection either to \c juqueen1 or \c juqueen2 will 
+be established.
+
+\note The front-end nodes have an identical environment, but multiple sessions of one 
+user may reside on different nodes which must be taken into account when 
+killing processes.
+
+\note The login nodes are running under Linux, while the computing nodes (CNs) are running a limited version of Linux called Compute Node Kernel (CNK). 
+Therefore it is necessary to cross-compile for JuQueen. A binary compiled for the compute nodes will not run on the login node and vice versa.
+
+It is necessary to <strong>upload the SSH key</strong> of the machine from 
+which to connect to one of JuQueens login nodes.
+Normally you've already done this during the <a href="http://www.fz-juelich.de/ias/jsc/user_account">application process</a>.
+
+See
+<a href="http://www.fz-juelich.de/ias/jsc/EN/Expertise/Supercomputers/JUQUEEN/UserInfo/LogonJuqueen.html">Logging on to JuQueen</a>
+(also for \em X11 problems).
+
+To be able to connect to \em JuQueen from different machines maybe you find it 
+useful to define one of \em GCSC's machines (e.g. \c speedo, \c quadruped, ...) 
+as a "springboard" to one of \em JuQueens login nodes (so that you have to login 
+to this machine first, then to \em JuQueen), see \ref secSSHHopping.
+
+
+<hr>
+\section secEnvironmentOnJuQueensLoginNodes Working environment on JuQueen's login nodes 
+
+Some additional software is only available if the appropriate \em module was
+loaded for the current session via the <tt>module</tt> command.
+A short introduction to the \em module concept and the <tt>module</tt> command
+can be found
+<a href="http://www.fz-juelich.de/ias/jsc/EN/Expertise/Supercomputers/JUQUEEN/UserInfo/ModuleEnvironment.html">here</a>.
+
+\note The \em module concept allows for dynamic modification of your shell
+environment but only for the current session. To make those changes persistent
+you might want to add your <tt>module load/swap</tt> commands to your shell
+configuration file (<tt>~/.bashrc</tt> etc.).
+
+For ug4 compiling, make sure that the cmake module has been loaded.
+You can e.g. add
+\code
+	module load cmake
+\endcode
+to your <tt>~/.bashrc</tt> file or simply execute it manually.
+
+
+<li>
+to your <tt>~/.bash_profile</tt> file or simply execute it manually. Necessary for ug4 are the modules \em lapack and \em cmake. 
+Together with some ug4 and ugsubmit settings a useful example setting is to add those lines to you <tt>~/.bash_profile</tt>:
+
+\code
+...
+#ug4
+export UG4_ROOT=~/ug4/trunk
+source $UG4_ROOT/scripts/shell/ugbash
+export UGSUBMIT_TYPE=Juqueen
+export UGSUBMIT_EMAIL=your.name@gcsc.uni-frankfurt.de
+
+#load some modules
+module load cmake
+module load lapack
+
+# get a nice prompt with host [full path]
+source $UG4_ROOT/scripts/shell/prompt
+...
+\endcode
+</li>
+</ul>
+
+\warning We suggest to use bash, we had some strange errors with other shells (no job output, $WORK set wrong).
+
+\note For this to work, you need to \ref secBuildUG4Checkout .
+
+<hr>
+\section secConfiguration_of_ug4_for_JuQueen Configuration of ug4 for JuQueen
+
+For \em JuQueen you have to "cross compile" and to do so use a specific 
+\ref secCMake_ToolchainFiles.
+Start CMake like this
+\code
+cmake -DSTATIC_BUILD=ON -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain/juqueen.cmake ..
+\endcode
+
+\ref secStaticBuild are your choice</strong> if you want to <strong>process very large jobs</strong>.
+Regarding the preferred build type "static" see also \ref secVery_large_jobs_on_JuQueen!
+
+You can check your executable by running the (standard unix) <tt>ldd</tt> command ("list dynamic dependencies") on it:
+\code
+ldd ugshell
+\endcode
+Answer should be <tt>not a dynamic executable</tt> for a completely static 
+build!
+
+<strong>Debug builds</strong>:
+No special requirements for the pre-installed <em>GCC 4.4.6</em> (in October 2012).
+
+For debugging a parallel application on JuQueen see \ref secDebuggingOnJuQueen
+
+<hr>
+\section secWorking_with_ug4_on_JuQueen Working with ug4 on JuQueen
+
+\subsection secBasic_job_handling Job Handling using ugsubmit (recommended)
+You can use \c ugsubmit to run your jobs on JUQUEEN. Make sure to source
+ug4/trunk/scripts/shell/ugbash and to export the variables
+\code
+	export UGSUBMIT_TYPE=Juqueen
+	export UGSUBMIT_EMAIL=your@email.com
+\endcode
+e.g. in <tt>~/.bashrc</tt>.
+(of course you have to replace 'your@email.com' with your real email adress...).
+
+\subsubsection secInteractive_jobs Interactive jobs
+<strong>Not possible</strong> in the moment!
+
+\subsubsection secBatch_jobs Batch jobs
+
+Read \ref pageugsubmit for further instructions on unified \c ugsubmit usage.
+
+\warning 	Make sure to execute all batch jobs on the $WORK partition of Juqueen.
+			Access to $HOME from the compute-nodes is not only slow but will likely
+			cause other troubles, too.			
+
+For manual job handling (not recommended, please modify ugsubmit for special needs!) see \ref secBasic_manual_job_handling.
+*/

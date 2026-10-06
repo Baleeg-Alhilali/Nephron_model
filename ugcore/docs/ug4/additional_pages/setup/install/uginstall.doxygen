@@ -1,0 +1,287 @@
+/*
+ * Copyright (c) 2012-2015:  G-CSC, Goethe University Frankfurt
+ * Author: Martin Rupp
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+
+/** \page pageUginstall uginstall - Scripts for installation
+\note UG4 is no longer available through SVN. Instead it is now available with git from github.com/UG4. The hints below may still be partially useful to some.
+
+uginstall is a number of small shell scripts to install some software without having root.
+By now, it is very preliminary and not guaranteed to work on all machines.
+
+To be able to use uginstall and the software it installs, you have to use the \ref pageBashTools. See there for setup.
+
+Before installing something, make sure things aren't already installed by some other user by checking
+the appropriate commands in the terminal (<tt>gcc --version</tt> and <tt>cmake --version</tt>).
+
+After <tt>source ~/.bashrc</tt> you can use, e.g.
+\code
+uginstall doxygen
+\endcode
+which installs doxygen 1.8 in <tt>~/local/doxygen</tt>. Here again, you'll have to use <tt>source ~/.bashrc</tt>.
+If you want to uninstall doxygen, just delete <tt>~/local/doxygen/</tt>.
+
+\note Please do always make sure that you comply with the licence of the software you are using. uginstall will print 
+you a yes/no question to accept licences, so it is your responsiblity to make sure you use the software in the right context.
+Also cite software you are using.
+
+Syntax is
+\code
+uginstall <APP> [-fromSvn] [-svnServer <address>] [-fromMac] [-macServer <address>]
+\endcode
+Where APP can be
+\code
+	cmake       2.8.12 
+	doxygen     1.8.7  
+	gcc         4.4                   
+	gmp         4.3.2                 
+	gnuplot     4.6.0
+	GotoBLAS2   1.13                  
+	Metis       5.0.2
+	mpfr        2.4.2                 
+	mpc         0.8.1                 
+	OpenMPI     1.6  
+	ParaView    3.14.1-Linux-32bit
+	ParMetis    4.0.2             
+	SuperLU     4.3               
+	HYPRE       2.9.0b            
+	scons       2.3.1             
+	boost       1.56.0            
+	hlibpro     2.0.1             
+	tbb         4.2               
+	ANN         1.1.2                 
+	LUA         5.1.4             
+\endcode
+
+
+\section uginstallSteps uginstall steps
+Following steps are made for each installation of a programm APP:
+ - create folder $HOME/local/
+ - create folder $HOME/local/APP
+ - download source archive from internet, save in $HOME/local//APP
+ - extract file, store in $HOME/local/APP/version
+ - configure the program (depending on the program, sometimes depending on platform)
+ - install libraries in $HOME/local/APP/lib and lib64, binaries in $HOME/local/APP/bin
+   includes in $HOME/local/APP/include ...
+ - create a symbolic link from $HOME/local/APP/used to $HOME/local/APP/version
+ 
+ 
+uginstall_config will then set PATH, LDFLAGS, LD_RUN_PATH, LIBRARY_PATH, 
+and LD_LIBRARY_PATH so you can use the program and the libs.
+You might need to open up a new console to reset these variables.
+
+\note You can change the install path in the file uginstall_path .
+
+\section uginstallOtherAccess Other access
+ 
+Sometimes it is not possible to access the internet from a 
+cluster. With the option <tt>-fromSvn</tt>, uginstall downloads the source archive from a server at the G-CSC named AG Queisser via
+\code
+scp -r software@$softwareServer:Software/uginstall/$filename $destination
+\endcode
+softwareServer is set to <tt>141.2.38.55</tt> by default. You can change this with <tt>-macServer x.x.x.x</tt> .
+It is also possible to download the archives from our svn server, with the option <tt>-fromSvn</tt>, then uginstall uses
+\code
+svn export svn://$svnServer/misc/uginstall/$filename $destination
+\endcode
+svnServer is set to <tt>fuji.gcsc.uni-frankfurt.de</tt> by default. You can change this with <tt>-svnServer</tt>.
+
+This is especially usefull when clusters do not allow internet connections and you have to use SVN tunneling. 
+So you connect to your cluster with
+\code
+ssh -R5337:fuji.gcsc.uni-frankfurt.de:3690 martin@cluster.com
+\endcode
+
+and there you can use uginstall with
+\code
+uginstall SuperLU -svnServer localhost:5337
+\endcode
+
+\section uginstallCmake Using uginstall in Cmake Files
+
+You can use uginstall also in cmake files. e.g. in the plugin experimental/superlu, when the plugin is activated with <tt>cmake -DSuperLU=ON ..</tt>, it automatically installs 
+the SuperLU library. This is done with
+\code  
+	UGInstall("SuperLU" INTERNAL_SUPERLU_PATH)
+	ExportDependencies("${INTERNAL_SUPERLU_PATH}/lib/libsuperlu_4.3.a")
+\endcode
+See for documentation the superlu cmake file and cmake/ug_plugin_includes.cmake .
+
+\section uginstallAddPrograms Add Programs
+ 
+If you want to add programs to the list, you have to add it to the files uginstall and uginstall_config.
+ 
+To make it possible to use it on clusters which don't allow internet acces, also add the source archive to 
+<tt>/Users/software/Software/uginstall/</tt> on the Software Server (MacPro AG Queisser) and to the SVN 
+<tt>svn://fuji.gcsc.uni-frankfurt.de/misc/uginstall</tt> .
+
+
+
+
+*/
+/*
+<hr>
+You can also install the software by yourself. To see how that works, I collected some of the most used software examples here.
+Note that there might be easier ways to install this software (Mac: installers/fink, Windows: installers, Linux: Package managers),
+and there might be newer versions of the software.
+
+\section secGCCFlags Some Paths you can adjust.
+All paths you can change in the following way:
+\code
+export LIBRARY_PATH=path1:path2:path3
+\endcode
+where path1 is searched first, then path2, and then path3. You can also add something to an existing path:
+\code
+export LIBRARY_PATH=addedPath:$LIBRARY_PATH
+\endcode
+or
+\code
+export LIBRARY_PATH=$LIBRARY_PATH:addedPath
+\endcode
+You'll have to write this into <tt>~/.bashrc</tt> to make your changes permanent.
+
+- <tt>PATH</tt> : search path for executables.
+- <tt>LIBRARY_PATH</tt> : path(s) to search libraries (.a) when statically linking
+- <tt>LD_LIBRARY_PATH</tt> : path(s) to search dynamic libraries (.sa) when a program is started.
+- <tt>LD_RUN_PATH</tt> : standard path to search dynamic libraries (.sa) when a program is started. This is written into the file when linking.
+	The difference to LD_LIBRARY_PATH is that LD_LIBRARY_PATH is accessed when the program is started, and LD_RUN_PATH is written into
+	the file and cannot be changed after linking. The directory LD_RUN_PATH written at link time is searched first, and then LD_LIBRARY_PATH.
+- <tt>C_INCLUDE_PATH</tt> : search path for C header files
+- <tt>CPLUS_INCLUDE_PATH</tt> : search path for C++ header files
+
+See also <a href="http://www.network-theory.co.uk/docs/gccintro/gccintro_23.html">here</a>.
+
+<hr>
+\section secDownloadCMake CMake
+
+\code
+wget http://www.cmake.org/files/v2.8/cmake-2.8.6.tar.gz
+tar xzf cmake-2.8.6.tar.gz
+cd cmake-2.8.6
+\endcode
+
+Root install
+\code
+sudo bootstrap
+sudo make
+\endcode
+
+Non-Root install
+\code
+./bootstrap --prefix=$INSTALLDIR
+make
+\endcode
+
+<hr>
+\section secDownloadDoxygen Doxygen
+\code
+wget http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.1.src.tar.gz
+tar xzf doxygen-1.8.1.src.tar.gz
+cd doxygen-1.8.1
+\endcode
+Root install
+\code
+./configure
+sudo make
+sudo make install
+\endcode
+Non-Root install
+\code
+./configure --prefix $INSTALLDIR
+make
+\endcode
+
+
+<hr>
+\section secDownloadGnuplot Gnuplot
+\code
+wget http://sourceforge.net/projects/gnuplot/files/gnuplot/4.6.0/gnuplot-4.6.0.tar.gz/download?sources=files -O gnuplot-4.6.0.tar.gz
+tar xzf gnuplot-4.6.0.tar.gz
+cd gnuplot-4.6.0
+\endcode
+Root
+\code
+./configure
+make
+make install
+\endcode
+Non-Root
+\code
+./configure --prefix=$INSTALLDIR
+make
+make install
+\endcode
+
+<hr>
+\section secDownloadOpenMPI OpenMPI
+\code
+wget http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.tar.gz
+tar openmpi-1.6.tar.gz
+cd openmpi-1.6
+\endcode
+Root
+\code
+./configure
+sudo make
+sudo make install
+\endcode
+Non-Root
+\code
+./configure --prefix=$INSTALLDIR
+make
+make install
+\endcode
+
+
+<hr>
+\section secDownloadGotoBlas2 GotoBlas2
+GotoBlas 1.13
+\code
+wget http://www.tacc.utexas.edu/documents/13601/b58aeb8c-9d8d-4ec2-b5f1-5a5843b4d47b -O GotoBLAS2-1.13.tar.gz
+tar xzf GotoBLAS2-1.13.tar.gz
+cd GotoBLAS2
+./quickbuild.64bit
+\endcode
+
+Root
+\code
+sudo cp libgoto2.a /usr/lib/
+sudo cp cblas.h /usr/include/
+\endcode
+
+Non-Root:
+You will have to tell gcc where the library libgoto2.a and the file cblas.h are. You do this with
+\code
+LIBRARY_PATH=$LIBRARY_PATH:$HOME/GotoBLAS2
+C_INCLUDE_PATH="$dir/include:$C_INCLUDE_PATH"
+\endcode
+
+*/

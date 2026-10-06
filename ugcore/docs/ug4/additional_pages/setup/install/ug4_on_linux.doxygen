@@ -1,0 +1,186 @@
+/*
+ * Copyright (c) 2011-2015:  G-CSC, Goethe University Frankfurt
+ * Author: Andreas Vogel
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4OnLinux Prerequisites on Linux / Unix
+
+[TOC]
+
+Before installing manually, you should check if the software is available in your packet manager or
+from your cluster management tool (e.g. <tt>module load</tt>).
+
+<hr>
+\section secInstallUg Installation of UG4
+Please follow the description at https://github.com/UG4/ughub to obtain a
+copy of \ug4. Below you'll find hints on how to obtain additional software which
+is required to build \ug4.
+
+
+<hr>
+\section secInstallLinuxCMake CMake
+
+\note You can use \ref pageUginstall for easy installation of cmake.
+
+<ul>
+  <li> In order to compile ug4, you have to have cmake installed.
+  <li> Check if cmake is already installed: open a terminal, enter <tt>cmake --version</tt>. Minimum Version is 
+  \em 2.6.
+  <li>If Cmake is not installed or wrong version, download \em CMake:
+    Download the Unix/Linux Source code 
+    of \em CMake from <a href="http://www.cmake.org/cmake/resources/software.html">here</a> 
+    (min Release 2.6. <a href="http://www.cmake.org/files/v2.8/cmake-2.8.8.tar.gz">direct link to 2.8.8</a>).
+   <li> suppose you downloaded cmake-2.8.8.tar.gz to your home directory. extract the file with <tt>tar -xzf cmake-2.8.8.tar.gz</tt> .
+  <li> change to the created <tt>cmake-2.8.8</tt> directory.
+  <li> you can look at the configuration options with <tt>./configure --help</tt> .
+  <li> if you have root access
+  <ul>
+  <li> <tt>./configure</tt>
+  <li> <tt>make</tt>
+  <li> <tt>sudo make install</tt>
+  </ul>
+  <li> if you don't have root access
+  <ul>  
+  <li> run <tt>./configure --prefix=.</tt> to install cmake in the current directory. 
+  <li> <tt>make</tt>
+  <li> <tt>make install</tt>
+  <li> cmake is now located at the <tt>bin</tt> subdirectory of your cmake-2.8.8 directory.
+  <li> to make the cmake command available from everywhere, add <tt>$HOME/cmake-2.8.8/bin</tt>
+  		to your PATH variable (see <a href="http://infohost.nmt.edu/tcc/help/pubs/dotfiles/bashrc.html">here</a>).
+  		(Enter the \em full path there, not "."). After that, do a <tt> source ~/.bashrc </tt>
+  </ul>  
+  <li> You can check now if cmake is working by entering <tt>cmake</tt> in the console.
+</ul>
+
+<hr>
+\section secInstallLinuxMPI MPI
+
+\note You can use \ref pageUginstall for easy installation of OpenMPI.
+
+
+<ul>
+  <li> Note: MPI is only needed for \em parallel execution of ug4.
+  <li> Check if MPI is already installed: open a terminal, enter <tt>which mpicc</tt>.
+  <li>If MPI is not installed, 
+    download <a href="http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.tar.gz">openmpi-1.6.tar.gz</a>
+    to your home directory.
+  <li> the process is now the same as for cmake, only that you are looking for <tt>mpicc</tt>.
+  <li> when you have no root: remember the <tt>--prefix=.</tt> option and to set the PATH .
+</ul>
+
+<hr>
+<br>
+\section secInstallLinuxLAPACK Installation BLAS/LAPACK (optional)
+
+\note You can use \ref pageUginstall for easy installation of GotoBLAS2.
+
+<ul>
+  <li> Note: On most systems, LAPACK and BLAS are preinstalled and are found by cmake.
+  <li> On some clusters, LAPACK/BLAS are kind of "built into" the compiler,
+  so you don't have to specify anything. In this case, use<br>
+  <tt>cmake -DBUILTIN_BLAS=ON -DBUILTIN_LAPACK=ON</tt> <br>
+  Ask the administrator for help.  
+  <li> On some systems, you'd have to install LAPACK/BLAS manually. 
+  You can do this on most systems via their package managers. 
+  <li> If you can't find/get/install the packages: 
+  Download <a href="http://www.tacc.utexas.edu/tacc-projects/gotoblas2">GotoBLAS2</a>.
+  <li> extract the source to <tt>~/software/GotoBLAS2/</tt>
+  <li> Choose one of the <tt>quickbuild.*</tt> files there and execute it.
+  <li> Now add the path <tt>~/software/GotoBLAS2</tt> to the environment variable
+  <tt>LD_LIBRARY_PATH</tt> by adding the line
+  \verbatim
+  LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/software/GotoBLAS2/
+  \endverbatim
+  add the end of your <tt>~/.bashrc</tt>.
+  <li> remember to <tt> source ~/.bashrc</tt>
+  <li> Now cmake should accept GotoBLAS2 as LAPACK/BLAS library.
+</ul>
+
+<hr>
+<br>
+\section secInstallLinuxParaView Installation of ParaView (optional)
+
+You can install a local version of <a href="http://paraview.org/">ParaView</a>
+by performing the following steps (only described for installation of a 
+"precompiled binary", which usually will be the preferred way):
+<ol>
+  <li>Download tar ball:<br>
+    Go to http://www.paraview.org/paraview/resources/software.php and choose 
+    the version, type (e.g. <em>"ParaView Binary Installer"</em>) and OS, and 
+    download the tar ball and move it in the directory where you want to 
+    install \em ParaView:
+    \verbatim
+mv ParaView-3.14.0-Linux-64bit.tar.gz ~/local
+    \endverbatim
+  </li>
+  <li>Unpack:
+    \verbatim
+cd ~/local
+tar xvzf ParaView-3.14.0-Linux-64bit.tar.gz 
+    \endverbatim
+  </li>
+  <li>After unpacking a binary installer the executables reside in e.g.
+    \verbatim
+ParaView-3.14.0-Linux-64bit/
+    \endverbatim
+    See the documentation (e.g. http://paraview.org/Wiki/The_ParaView_Tutorial)
+    for how to build \em ParaView from sources (\em CMake and a compiler (of 
+    course) necessary &mdash; and a bit time).
+  </li>
+  <li>Shortcuts for executing the \em ParaView client and server from 
+    command-line (i.e., add lines like the following in your <tt>.bashrc</tt> 
+    (for Bash)):
+    \verbatim
+alias paraview='$HOME/local/ParaView-3.14.0-Linux-64bit/bin/paraview'
+alias pvserver='$HOME/local/ParaView-3.14.0-Linux-64bit/bin/pvserver'
+    \endverbatim
+    or (for Tcsh):
+    \verbatim
+alias paraview '$HOME/local/ParaView-3.14.0-Linux-64bit/bin/paraview'
+alias pvserver '$HOME/local/ParaView-3.14.0-Linux-64bit/bin/pvserver'
+    \endverbatim
+  </li>
+  <li>Basic usage (using the shortcut mentioned above):
+    <ul>
+      <li>Start an instance of \em ParaView and load a datafile:
+        \verbatim
+paraview --data=<VTK-File>
+        \endverbatim
+      </li>
+      <li>Start an instance of \em ParaView and load a (previously saved) state 
+        file (with ending <tt>.pvsm</tt>):
+        \verbatim
+paraview --state=<state file>
+        \endverbatim
+      </li>
+    </ul>
+  </li>
+</ol>
+*/

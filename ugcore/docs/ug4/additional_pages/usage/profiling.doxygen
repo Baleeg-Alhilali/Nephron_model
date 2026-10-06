@@ -1,0 +1,560 @@
+/*
+ * Copyright (c) 2011-2013:  G-CSC, Goethe University Frankfurt
+ * Author: Martin Rupp
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4Profiling Profiling ug4
+
+[TOC]
+
+For any questions, contact martin.rupp@gcsc.uni-frankfurt.de or 
+sebastian.reiter@gcsc.uni-frankfurt.de .
+
+
+<hr>
+\section secEnableProfiling Enable Profiling in ug4
+
+You enable profiling in ug4 by setting the \em CMake flag <tt>-DPROFILER=\<Profiler\></tt>.
+E.g., using a shell open in your subdirectory <tt>build_debug</tt> (as
+explained \ref pageUG4Install "here" or 
+\ref secInstallEclipseUseMakefiles "here"), and enter
+\verbatim
+cmake -DPROFILER=<Profiler> ..
+make
+\endverbatim
+
+The currently supported options for <tt>\<Profiler\></tt> are:
+<tt>None, Shiny, Scalasca, Vampir, ScoreP</tt>
+
+Note that <em>CMake</em> "remembers" the flags you set.
+You can see the flags set in the output (for not changing any flags just enter 
+<tt>cmake ..</tt>). 
+
+To enable profiling of the \em PCL (Parallel Communication Layer), set 
+<tt>-DPROFILE_PCL=ON</tt>.
+
+Check the output of <tt>cmake ..</tt> for changes and additional flags.
+Keep in mind that you have to do a make when changing <em>Cmake</em> flags.
+
+\note The Shiny profiler is shipped with the ug4 distribution and can always
+be used. However, for the Scalasca, Vampir and ScoreP profiling additional
+software must be installed (refer to the provided links below). One some machines
+this software is already installed, e.g. on cekon include "/home/profiler/bin"
+to your PATH in order to obtain scalasca and scorep. VampirTrace is provided
+with Open MPI 1.3 and higher.
+
+\note All profilings rely on the user-defined profiling marks <tt>PROFILE_*</tt>
+that must be inserted into the code manually. Choosing a compiler those marks
+are defined for the requested profiler API. The external profilers Scalasca, Vampir
+and ScoreP also provide a automatic instrumentation facility, that inserts
+profiling marks in every function automatically. However, using C++ this is error-prone
+and not usable with ug4, since all inline functions are profiled resulting in
+far to many profiling marks, hugh runtime overhead and even not starting binaries
+due to buffer size restrictions.
+
+\subsection secEnableProfilingShiny Shiny Profiling
+
+Using the <a href="http://sourceforge.net/projects/shinyprofiler/">Shiny Profiler</a>
+which is included with ug4 can be enabled setting the \em CMake flag
+<tt>-DPROFILER=Shiny</tt>.
+
+For getting profiling output at the end of the execution of your script,
+you can add
+
+\code
+SetOutputProfileStats(true)
+\endcode
+at the beginning of your script. With this, profiler statistics are output at
+the end of the execution of <tt>ugshell</tt>, there you will see the total
+call tree (from main on) and a flat list with timings.
+
+For a more visual output you can add
+\code
+WriteProfileData("pd.pdxml")
+\endcode
+
+At the end of your script. For viewing that file, download the
+<a href="http://gcsc.uni-frankfurt.de/Members/mrupp/shinyviewer/shinyprofileviewer">ShinyProfileViewer</a>.
+
+\subsection secEnableProfilingScalasca Scalasca Profiling
+
+The <a href="http://www.scalasca.org/">Scalasca</a> profiler is enabled by
+setting the \em CMake flag <tt>-DPROFILER=Scalasca</tt>. This will specify
+the user-defined <tt>PROFILE</tt> profiling marks (see below) to write
+profiling output using the EPIK-API provided by Scalasca.
+
+In addition the scalsca compiler-wrapper must be used when building the code.
+Make sure you have the <tt>scalasca</tt> binary in your PATH and run cmake with
+
+\verbatim
+CC="scalasca -instrument -comp=none -user mpicc" CXX="scalasca -instrument -comp=none -user mpicxx" cmake -DPROFILER=Scalasca ...
+\endverbatim
+
+Note, that the compiler is only set at the very first cmake run and not changed
+on successive reruns. In order to change the compiler wrapper you must remove
+your build completely and run cmake from scratch. Your application is the analysed using
+
+\verbatim
+scalasca -analyse mpirun ugshell -ex ...
+\endverbatim
+
+See the profiling result via
+
+\verbatim
+scalasca -examine <epik-folder>
+\endverbatim
+
+\subsection secEnableProfilingVampir VampirTrace Profiling
+
+The <a href="http://www.tu-dresden.de/die_tu_dresden/zentrale_einrichtungen/zih/forschung/software_werkzeuge_zur_unterstuetzung_von_programmierung_und_optimierung/vampirtrace">VampirTrace</a> profiler is enabled by
+setting the \em CMake flag <tt>-DPROFILER=Vampir</tt>. This will specify
+the user-defined <tt>PROFILE</tt> profiling marks (see below) to write
+profiling output using the VampirTrace-API.
+
+In addition the vampirtrace compiler-wrapper must be used when building the code.
+Make sure you have the <tt>vtcc, vtcxx</tt> binary in your PATH and run cmake with
+
+\verbatim
+CC="vtcc" CXX="vtcxx" cmake -DPROFILER=Vampir ...
+\endverbatim
+
+Note, that the compiler is only set at the very first cmake run and not changed
+on successive reruns. In order to change the compiler wrapper you must remove
+your build completely and run cmake from scratch.
+Run your application normally, trace output will be produced automatically.
+
+\subsection secEnableProfilingScoreP ScoreP Profiling
+
+The <a href="http://www.vi-hps.org/projects/score-p/">ScoreP</a> profiler is enabled by
+setting the \em CMake flag <tt>-DPROFILER=ScoreP</tt>. This will specify
+the user-defined <tt>PROFILE</tt> profiling marks (see below) to write
+profiling output using the SCOREP-API.
+
+In addition the scorep compiler-wrapper must be used when building the code.
+Make sure you have the <tt>scorep</tt> binary in your PATH and run cmake with
+
+\verbatim
+CC="scorep --user --nocompiler mpicc" CXX="scorep --user --nocompiler mpicxx" cmake -DPROFILER=ScoreP ...
+\endverbatim
+
+Note, that the compiler is only set at the very first cmake run and not changed
+on successive reruns. In order to change the compiler wrapper you must remove
+your build completely and run cmake from scratch.
+Run your application normally, trace output will be produced automatically.
+
+\note Currently the ScoreP support for ug4 is experimental and may not be successful
+
+<hr>
+\section secProfilingRegistry Profiling Registry
+
+You can enable profiling all calls made through the <strong>ug4</strong>
+<em>Registry / Bridge</em> by calling <em>CMake</em> with
+\verbatim
+cmake -DPROFILE_BRIDGE=ON ..
+\endverbatim
+
+
+<hr>
+\section secProfilingLUA Profiling your LUA Script
+
+To enable profiling of your LUA Script, simply add a
+\code
+ProfileLUA(true)
+\endcode
+at the beginning of your script. You can then print profiling information like in \ref secEnableProfiling or \ref secScriptProfiling.
+However, you can also use
+\code
+PrintLUA()
+\endcode
+at the end of your code. This will list you your LUA script files together with line numbers and time spend in these lines.
+
+\note For the moment, we only profile the top-level calls, not all subroutine calls.
+This has performance reasons.
+Expect a performance drawback when calling small functions very often.
+You can also disable the LUA profiler for these calls:
+\verbatim
+ProfileLUA(false)
+AssembleLinearOperatorRhsAndSolution(linOp, u, b)
+ProfileLUA(true)
+\endverbatim
+
+
+
+<hr>
+\section secProfilingYourCode Profiling your C/C++ code
+
+If you want to measure the time spent in your functions or in sections of your
+code, you can use our profiling functions:
+\code
+#include  "common/profiler/profiler.h"
+\endcode
+<ul>
+  <li><tt>PROFILE_FUNC_GROUP()</tt> is for profiling functions:
+    Put <tt>PROFILE_FUNC_GROUP()</tt> at the beginning of the function.
+    Here <tt>name</tt> is the unique name of the profile node, and <tt>group</tt> is a group
+    where you want to put that node in. For example, you can put all sections of code which do file access in the group "io":
+    \code
+void WriteAMGResultsToFile(const char* filename, std::vector<double> &results)
+{
+	PROFILE_FUNC_GROUP("io");
+	// do stuff
+}
+\endcode
+\note When you put <tt>PROFILE_FUNC_GROUP(group)</tt> not at the beginning of the
+    scope you or others might get unexpected behaviour.
+
+\note You can also put profile nodes in more than one group at once by seperating groups with a space: "io amg debug".
+
+  <li><tt>PROFILE_BEGIN_GROUP(name, group)</tt> is for profiling sections of code.
+    Profiling is done from the line where <tt>PROFILE_BEGIN_GROUP(name, group)</tt> is until
+    <tt>PROFILE_END()</tt> or until the end of the scope where 
+    <tt>PROFILE_BEGIN_GROUP(name, group)</tt> was in.
+    \code
+
+void MyFunction(size_t n)
+{
+  // first do some stuff
+  PROFILE_BEGIN_GROUP(MyFunction_CalculationA, "calculation")
+  
+  // do calculation A
+  
+  PROFILE_END()
+  
+  PROFILE_BEGIN_GROUP(MyFunction_CalculationB, "calculation")
+  
+  // do calculation B
+  
+  PROFILE_END()
+  
+  PROFILE_BEGIN_GROUP(MyFunction_io, "io")
+  // do rest
+  // MyFunction_io is evaluated until the end
+}
+    \endcode
+
+    Here the profile node <tt>MyFunction_CalculationA</tt> measures only the part in
+    <tt>do calculation A</tt>, <tt>MyFunction_CalculationB</tt> measures only the part in
+    <tt>do calculation B</tt>, and <tt>MyFunction_io</tt> measures only the
+    part in <tt>do rest</tt>.
+
+    \note <tt>PROFILE_FUNC_GROUP()</tt> is basically only a <tt>PROFILE_BEGIN_GROUP</tt>
+    with name = function name.
+  </li>
+    <li> <tt>PROFILE_BEGIN(name)</tt> and <tt>PROFILE_FUNC()</tt> is the same only that group is set to NULL (no group). </li>
+    
+  <li>When a profile node is auto-ended by the scope mechanism, we use 
+    destructors to accomplish this.
+    However, it is possible that some destructors are called AFTER the 
+    destructor of the profile node.
+    The reason for this is that destructors are called in reverse order of 
+    constructors:
+    First constructed, last destructed (see 
+    <a href="http://www.parashift.com/c++-faq-lite/dtors.html#faq-11.2">here</a>). 
+    So the times spend in some destructors might not be added to this profile 
+    node.
+    Examples for this are objects which are declared before 
+    <tt>PROFILE_BEGIN</tt> or arguments with destructors which are passed as 
+    value:
+    \code
+void MyFunction(std::vector<int> vec)
+{
+  PROFILE_FUNC_GROUP("myGroup") // does not measure destructor of vec.
+  
+  std::vector<int> vec2;
+  
+  PROFILE_BEGIN_GROUP(MyFunctionSectionA, "myGroup")  // does not measure destructor of vec and vec2.
+  
+  std::vector<int> vec3;
+  
+  // implicit destructor of vec3
+  // implicit PROFILE_END(MyFunctionSectionA)
+  // implicit destructor of vec2
+  // implicit PROFILE_END(MyFunction)
+  // implicit destructor of vec
+}
+    \endcode
+  </li>
+  <li>You can also nest Profiling:
+    \code
+void MyFunction(size_t n)
+{
+  PROFILE_FUNC_GROUP("myGroup")
+  
+  for(size_t i=0; i<5; i++)
+  {
+    PROFILE_BEGIN_GROUP(MyFunction_InLoop, "myGroup");
+    // do some stuff
+  }		
+  
+  // do some other stuff (not measure by MyFunction_InLoop anymore)
+}
+    \endcode
+  </li>
+  <li>
+    Be aware that, no matter which compiler you are using, <tt>PROFILE_BEGIN</tt> has a small overhead, so dont use it 
+    in functions which do only very little.
+  </li>
+</ul>
+
+
+<hr>
+\section secProfilingCPPExample C++ Example
+
+
+<ul>
+  <li>Example Code to be profiled:
+    \code
+void FunctionA(double &b)
+{
+  PROFILE_FUNC();
+  for(size_t i=0; i<1000; i++)
+    b += sin(b);
+}
+
+void FunctionA_bad(double &b)
+{
+  PROFILE_FUNC();
+  for(size_t i=0; i<1000; i++)
+  {
+    // this section is too small!
+    PROFILE_BEGIN(FunctionA_bad_in_loop)
+    b += sin(b);
+  }
+}
+
+void FunctionB(double &b)
+{
+  PROFILE_FUNC();
+  for(size_t i=0; i<1000; i++)
+  {
+    FunctionA(b);
+    FunctionA_bad(b);
+  }
+}
+
+void FunctionC(double &b)
+{
+  PROFILE_FUNC();
+  FunctionB(b);
+  FunctionA(b);
+  FunctionB(b);
+}
+
+void MyFunction()
+{
+  PROFILE_FUNC();
+  double d=0.1;
+  FunctionC(d);
+  cout << d << endl;
+}
+    \endcode
+  </li>
+  <li>Now we write a LUA Script:
+    \code
+MyFunction()
+-- check if profiler is available
+if GetProfilerAvailable() == true then
+  -- get node
+  pn = GetProfileNode("MyFunction")
+  -- check if node is valid
+  if pn:is_valid() then
+    print("Called MyFunction "..pn:get_avg_entry_count().." times.")
+    print("Spend "..pn:get_avg_self_time_ms().." ms for MyFunction alone (without child nodes).")
+    print("Spend "..pn:get_avg_total_time_ms().." ms in MyFunction altogether.\n")
+    
+    print("MyFunction call tree")
+    print(pn:call_tree())
+    print("MyFunction call list self time sorted")
+    print(pn:child_self_time_sorted())
+    print("MyFunction call list total time sorted")
+    print(pn:total_time_sorted())
+    print("MyFunction call list entry count sorted")
+    print(pn:entry_count_sorted())
+  else
+    print("MyFunction is not known to the profiler.")
+  end
+else
+  print("Profiler not available.")
+end
+    \endcode
+  </li>
+  <li>Results:
+    \verbatim
+Called MyFunction 1 times.
+Spend 0.1044 ms for MyFunction alone (without child nodes).
+Spend 725.6421 ms in MyFunction altogether.
+
+MyFunction call tree
+call tree                                            hits       self time      total time 
+MyFunction                                             1  104.4 us    0% 725.64 ms  100% 
+FunctionC                                              1    900 ns    0% 725.54 ms   99%
+  FunctionB                                            2  579.6 us    0% 725.49 ms   99% 
+  FunctionA                                         2000 98.969 ms   13% 98.969 ms   13%
+  FunctionA_bad                                     2000 243.79 ms   33% 625.94 ms   86%
+    FunctionA_bad_in_loop                          2e+06 382.15 ms   52% 382.15 ms   52%
+  FunctionA                                            1   49.5 us    0%   49.5 us    0% 
+
+MyFunction call list self time sorted
+self time sorted                                     hits       self time      total time 
+FunctionC                                              1    900 ns    0% 725.54 ms   99% 
+FunctionA                                              1   49.5 us    0%   49.5 us    0% 
+MyFunction                                             1  104.4 us    0% 725.64 ms  100% 
+FunctionB                                              2  579.6 us    0% 725.49 ms   99% 
+FunctionA                                           2000 98.969 ms   13% 98.969 ms   13% 
+FunctionA_bad                                       2000 243.79 ms   33% 625.94 ms   86% 
+FunctionA_bad_in_loop                              2e+06 382.15 ms   52% 382.15 ms   52%
+
+MyFunction call list total time sorted
+total time sorted                                    hits       self time      total time 
+FunctionA                                              1   49.5 us    0%   49.5 us    0% 
+FunctionA                                           2000 98.969 ms   13% 98.969 ms   13% 
+FunctionA_bad_in_loop                              2e+06 382.15 ms   52% 382.15 ms   52%
+FunctionA_bad                                       2000 243.79 ms   33% 625.94 ms   86% 
+FunctionB                                              2  579.6 us    0% 725.49 ms   99% 
+FunctionC                                              1    900 ns    0% 725.54 ms   99% 
+MyFunction                                             1  104.4 us    0% 725.64 ms  100% 
+
+MyFunction call list entry count sorted
+entry count sorted                                   hits       self time      total time 
+MyFunction                                             1  104.4 us    0% 725.64 ms  100% 
+FunctionC                                              1    900 ns    0% 725.54 ms   99% 
+FunctionA                                              1   49.5 us    0%   49.5 us    0% 
+FunctionB                                              2  579.6 us    0% 725.49 ms   99% 
+FunctionA                                           2000 98.969 ms   13% 98.969 ms   13% 
+FunctionA_bad                                       2000 243.79 ms   33% 625.94 ms   86% 
+FunctionA_bad_in_loop                              2e+06 382.15 ms   52% 382.15 ms   52%
+    \endverbatim
+    Here we see that <tt>FunctionA_bad</tt> takes six times as long as 
+    <tt>FunctionA</tt>, even though they both perform the same task.
+    This is because the small overhead of <tt>PROFILE_BEGIN</tt> accumulated 
+    to a measureable time when it was executed two million times.
+  </li>
+  <li><strong>Explanations</strong>:
+    <ul>
+      <li>The <tt>self time</tt> of a method is the time spent in this method, 
+        without the time spent in all methods called from the first one &mdash; 
+        if they also use the profiler.
+        To make it clear:
+        If a called method doesn't use the profiler the time spent for it 
+        accounts for the <tt>self time</tt> of the calling method!
+      </li>
+    </ul>
+  </li>
+  <li>Utilities for the <strong>Analysis of Profiling Results</strong> 
+    (automatic comparison of several simulation runs etc.) see 
+    \ref pageUG4ScalabilityTests .
+  </li>
+</ul>
+
+<hr>
+\section secScriptProfiling More Profiling Control in the Script
+Printing the whole call tree at the end of the execution can be pretty much information, and that is why there is also a
+direct way of accessing timing information for a specific Profiler Node
+(Profiler Nodes are all nodes which got created with <tt>PROFILE_BEGIN</tt> or <tt>PROFILE_FUNC</tt>, see \ref secProfilingYourCode).
+
+\warning If a part of code never got executed, the profiler nodes in there do not exist.
+
+\code
+UGProfileNode *GetProfileNode(const char *str);
+\endcode
+Example usage is
+\code
+print(GetProfileNode("main"):call_tree())
+\endcode
+
+The <tt>UGProfilerNode</tt> has the following functions:
+    \code
+class UGProfilerNode
+{
+  double get_avg_entry_count() const;                         // number of entries in this profiler node
+  double get_avg_self_time_ms() const;                        // time in milliseconds spend in this node excluding subnodes
+  double get_avg_total_time_ms() const;                       // time in milliseconds spend in this node including subnodes
+  string call_tree(double dMarginal=0.0) const;               // returns string with call tree
+  string child_self_time_sorted(double dMarginal=0.0) const;  // string with sorted childs (sorted by self time)
+  string total_time_sorted(double dMarginal=0.0) const;       // string with sorted childs (sorted by total time)
+  string entry_count_sorted(double dMarginal=0.0) const;      // string with sorted childs (sorted by entry count)
+  string groups() const;									  // lists time spent in groups
+  bool is_valid() const;                                      // true if this is a valid node (i.e. != NULL)
+}
+    \endcode
+\attention If <tt>dMarginal != 0.0</tt>, only nodes which account for
+    more than <tt>dMarginal*100 % of the total time</tt> are part of the output.
+    So if you want to print the call tree, and want to display only nodes which
+    account for more than 3% of the total time, you can write
+\code
+GetProfileNode("main"):call_tree(0.03)
+\endcode
+
+For nodes other than "main", you should check that the profile node could be found.
+It's also a good idea to check if the profiler is available - otherwise every GetProfileNode(...):is_valid() = false. For this you use
+<tt>GetProfilerAvailable() == true</tt>.
+
+
+
+Here's an example to view detailed information about ALS_ApplyLinearSolver without having to look at the whole call tree of main.
+\code
+if GetProfilerAvailable() == true then
+  pn = GetProfileNode("ALS_ApplyLinearSolver")
+  if pn:is_valid() then   -- check if node is valid
+
+    print("Called MyFunction "..pn:get_avg_entry_count().." times.")
+    print("Spend "..pn:get_avg_self_time_ms().." ms for ALS_ApplyLinearSolver alone (without child nodes).")
+    print("Spend "..pn:get_avg_total_time_ms().." ms in ALS_ApplyLinearSolver altogether.\n")
+    print("ALS_ApplyLinearSolver call tree")
+    print(pn:call_tree())
+    print("ALS_ApplyLinearSolver call list self time sorted")
+    print(pn:child_self_time_sorted())
+    print("ALS_ApplyLinearSolver call list total time sorted")
+    print(pn:total_time_sorted())
+    print("ALS_ApplyLinearSolver call list entry count sorted")
+    print(pn:entry_count_sorted())
+  else
+    print("ALS_ApplyLinearSolver is not known to the profiler.")
+  end
+else
+  print("Profiler not available.")
+end
+\endcode
+
+\note You can also write the strings returned by e.g. call_tree to a file. Remember to add some <tt>if pcl:GetProcRank() == 0 then</tt> to prevent all processors from writing.
+
+Another way of profiling is
+\code
+print(GetProfileNodes("main"):groups())
+\endcode
+This will list the time spent in different groups, for example <tt>mpirun -np 4 ./ugshell -ex conv_diff/laplace.lua -numRefs 8</tt> will give you
+\verbatim
+algebra             3.90574 s  max: 3.96512 s  min: 3.90574 s  diff: 59.3775 ms (1.4975 %)
+debug               21.6    us max: 21.6    us min: 14.4    us diff: 7.2     us (33.3333 %)
+parallelization     8.0802  ms max: 8.1243  ms min: 8.0613  ms diff: 63      us (0.775451 %)
+\endverbatim
+This will give you also <em>parallel</em> information, and you can check if some cores spend more time in some group than others (shown in diff).
+
+*/

@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2010-2013:  G-CSC, Goethe University Frankfurt
+ * Author: Sebastian Reiter
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4Introduction Introduction
+
+\ug4 is a simulation framework, targeted at the solution of differential 
+equations on unstructured hybrid grids in 1, 2 and 3 dimensions on systems 
+reaching from laptops to massively parallel systems.
+\ug4 is written in C++, striving for a flexible, yet fast and robust simulation 
+environment.
+
+
+\ug4 has been written and is still developed at the <em>Goethe Center for
+Scientific Computing at the University of Frankfurt, Germany </em>
+(http://www.g-csc.de).
+
+
+https://github.com/UG4/ugcore gives a quick overview on how to obtain and to install
+\ug4. Several example applications are described and tools for pre- and
+postprocessing are linked.
+
+
+Features of \ug4 are:
+  - Fast and efficient numerical solvers for serial and parallel environments.
+
+  - A flexible discretization module, allowing to freely couple equations, input
+    and output parameters, even on scripting level.
+
+  - An efficient extensible grid manager supporting distributed adaptive hybrid
+    multigrids in 1, 2 and 3 dimensions.
+    Supported element types are vertices, edges, triangles, quadrilaterals, 
+    tetrahedra, hexahedra, prisms and pyramids. 
+    
+  - A flexible algebra independent from grid and discretization designed to
+  	swap the core functions to support double/single precision, 
+  	systems of equations and GPGPUs. A flexible Sparse Matrix with the ability
+  	to change the structure and do efficient computations at any time allowing
+  	easy integration of very flexible discretization strategies and numerical
+  	procedures.
+  	
+  - A parallelization layer based on MPI which allows efficient communication
+    on distributed hierarchical graphs.
+    Scalability has been shown for up to 256ki processes &mdash; more to come...
+
+  - Efficient parallel solvers: Iterative Solvers, Preconditioners, Geometric and 
+  	Algebraic Multgrid, Sparse LU Decomposition and more.
+
+  - ug4 extends the lua scripting language, which allows to control the entire
+    simulation from powerful and easily readable scripts. A plugin for the popular
+    development editor framework eclipse supports provides
+    syntax highlighting, checking and code completion.
+
+  - Through the <em>Visual Reflection Library</em> users can run and control an
+    entire simulation through a modern graphical interface.
+
+  - \ug4 also features an interactive shell with auto-completion, which can
+    be used in addition to scripts to have even more control over the run of
+    a simulation.
+
+  - A Plugin system allows users to extend \ug4 without having to dive into
+    the specifics of \ug4's implementation.
+    Plugins can export functions and classes, which are then immediately 
+    available in \ug4's script and in the <em>Visual Reflection Library</em>.
+
+  - \ug4 is backed up by several powerful tools like \em ProMesh (meshing 
+    software), the \em ConnectionViewer (used to inspect matrix connections),
+    or the integrated profiler (Shiny extended by output and analyzation tools).
+  	
+  - Simulation results can be stored and interpreted by widely spread 
+    visualization toolkits like the \em VTK based \em ParaView.
+
+  - \ug4 is a cross-platform tool and supports \em Linux, \em MacOSX and 
+    <em>Microsoft Windows</em>.
+
+*/
+
+// Removed the 'releases page' from the Overview for a lack of meaningful releases:
+//Take a look at the current release for more information:
+//\ref pageUG4Releases

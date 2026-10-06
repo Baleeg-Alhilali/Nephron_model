@@ -1,0 +1,146 @@
+#!/bin/bash
+######################################################################
+# ugbash
+#-------------------------------------------------------------------
+# created by Martin Rupp 01.06.2012
+# mail: martin.rupp@gcsc.uni-frankfurt.de
+#
+# source this file in your ~/.bashrc :
+# 1. with specifiying UG4_ROOT:
+# UG4_ROOT=~/Documents/workspace/ug4
+# source $UG4_ROOT/ugcore/scripts/shell/ugbash
+# 2. without (UG4_ROOT is set to the path ../../ of ugbash)
+# source ~/Documents/workspace/ug4/scripts/ugbash
+#
+# by that, you can access all ug4 bash scripts:
+# cdug - change ug4 directory
+# ugsubmit/uginfo/ugcancel - Unified Job Scheduling Scripts, see ugsubmit
+# uginstall - install local versions of software (for advanced users)
+# bash completion for ugshell, cmake, ugcmake, and all of the above 
+######################################################################
+
+#     get UG4_ROOT     # 
+########################
+
+if [ -z "$UG4_ROOT" ]; then
+	UG4_ROOT=`dirname ${BASH_SOURCE[0]}`/../../../
+	
+	# make path absolute
+	# for compatibilty to mac, don't use realpath or readlink here.
+	olddir=`pwd`
+	cd $UG4_ROOT
+	UG4_ROOT=`pwd`
+	cd $olddir
+else
+	if [ ! -e $UG4_ROOT/ugcore/cmake/ug_includes.cmake ]; then
+		echo "Could not find UG4_ROOT/cmake/ug_includes.cmake. Is UG4_ROOT=$UG4_ROOT right?"
+	fi	   	
+fi	
+
+export UG4_ROOT
+
+# add scripts/shell to path
+PATH=$PATH:$UG4_ROOT/ugcore/scripts/shell:$UG4_ROOT/bin
+export PATH
+
+# add ugcomplete and cdug (for bash only)
+SHELLTYPE=`ps -o comm="" -p $$`
+case "$SHELLTYPE" in
+	*bash*) source $UG4_ROOT/ugcore/scripts/shell/ugcomplete
+	;;
+esac
+source $UG4_ROOT/ugcore/scripts/shell/cdug
+
+# make bash scripts executable
+chmod +x $UG4_ROOT/ugcore/scripts/shell/uginfo
+chmod +x $UG4_ROOT/ugcore/scripts/shell/ugcancel
+chmod +x $UG4_ROOT/ugcore/scripts/shell/ugsubmit
+
+chmod +x $UG4_ROOT/ugcore/scripts/shell/uginstall
+chmod +x $UG4_ROOT/ugcore/scripts/shell/sshfsmake
+
+chmod +x $UG4_ROOT/ugcore/scripts/shell/xprun
+chmod +x $UG4_ROOT/ugcore/scripts/shell/mpigdb1
+chmod +x $UG4_ROOT/ugcore/scripts/shell/xtermrun
+
+chmod +x $UG4_ROOT/ugcore/scripts/shell/ugcmake-start
+chmod +x $UG4_ROOT/ugcore/scripts/shell/ugconfig
+chmod +x $UG4_ROOT/ugcore/scripts/shell/ugsubmit-getconfig
+
+# grep search for ug
+# use e.g. 
+#    ugbasegrep MySearchTerm
+#    ugappsgrep LoadDomain
+# all searches exclude the .svn dirs
+ 
+# search in ug4/ugbase 
+ugbasegrep()
+{
+	fgrep --exclude-dir=".svn" -rI "$1" $UG4_ROOT/ugcore/ugbase
+}
+
+# search in ug4/plugins}
+ugpluginsgrep()
+{
+	fgrep --exclude-dir=".svn" -rI "$1" $UG4_ROOT/plugins
+}
+
+# search in ug4/cmake
+ugcmakegrep()
+{
+	fgrep --exclude-dir=".svn" -rI "$1" $UG4_ROOT/ugcore/cmake
+}
+
+# search in ug4/apps for lua, c, cpp or .txt files
+ugappsgrep()
+{
+	fgrep --exclude-dir=".svn" --include="*\.lua" --exclude="ug4CompletionList.txt" --exclude="myUg4CompletionList.txt" \
+		--include="*\.c" --include="*\.cpp" --include="*\.txt" --include="*\.h" -rI "$1" $UG4_ROOT/apps
+}
+
+# search in ug4/scripts
+ugscriptsgrep()
+{
+	fgrep --exclude-dir=".svn" -rI "$1" $UG4_ROOT/ugcore/scripts
+}
+
+# search in all ug4 for .lua, .c*, .h, .txt
+uggrep()
+{
+	fgrep --include="*\.lua" --include="*\.c*" --include="*\.h" --include="*\.txt" --exclude-dir=".svn" \
+		--exclude="ug4CompletionList.txt" --exclude="myUg4CompletionList.txt" -rI "$1" $UG4_ROOT
+}
+
+# search in ug4/docs for .doxygen files
+ugdocsgrep()
+{
+	fgrep --include="*\.doxygen" --exclude-dir=".svn" -rI "$1" $UG4_ROOT/ugcore/docs
+}
+
+
+ugclearoutput()
+{
+	find . -name '*.pmat' | xargs rm
+	find . -name '*.mat' | xargs rm
+	find . -name '*.pvec' | xargs rm
+	find . -name '*.vec' | xargs rm
+	find . -name '*.pvtu' | xargs rm
+	find . -name '*.vtu' | xargs rm
+	find . -name '*.values' | xargs rm
+	find . -name '*.marks' | xargs rm
+	find . -name '*.ugx' | xargs rm
+}
+
+
+# svn update $UG4_ROOT
+alias ug4svnupdate="svn update $UG4_ROOT"
+
+# delete all binary output files forcing a re-linking
+alias ugrelib="rm $UG4_ROOT/lib/*; rm $UG4_ROOT/bin/ugshell; rm $UG4_ROOT/bin/plugins/*"
+
+
+alias ugcmake-start-std="ugcmake-start -DDIM=\"2;3\" -DCPU=\"1;2;3\" -DPROFILER=Shiny -DSuperLU=ON -Damg=ON .."
+
+scriptpath=`dirname ${BASH_SOURCE:-$0}`
+source $scriptpath/uginstall_config
+

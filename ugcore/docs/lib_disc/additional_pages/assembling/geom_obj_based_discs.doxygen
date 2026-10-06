@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2010-2012:  G-CSC, Goethe University Frankfurt
+ * Author: Andreas Vogel
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageLDGeomObjBasedDiscs Geometric Object Based Discretizations
+
+The interfaces presented in \ref pageLDCategorization "Categorization of Problems" 
+separate nicely the 
+implementation of the problem specific domain discretizations from the other
+components such as time-stepping schemes, non-linear solvers and linear solver.
+Now one (recommended) way of implementation the spatial part of the discretization
+is presented. It will lead to very flexibel and reusable implementations of small
+and commonly used parts of problems. These parts can be combined to form a 
+major problem.
+
+- \ref secGeomObjBasedDiscsGeneralIdea "General Idea"
+- \ref secElemDisc "Element Discretization"
+
+<br>
+
+<hr>
+\section secGeomObjBasedDiscsGeneralIdea General Idea
+<hr>
+
+In order to implement the spacial part of a discretization in
+\ref pageLDCategorization "Categorization of Problems" have been identified
+several functions that a user has to specify to use the interface. These
+function are
+
+<ul>
+<li> stationary linear case
+	<ul>
+	<li> computation of the matrix \f$A_h 
+	\left( := \frac{\partial A_h \vec{v}_h}{\partial \vec{v}_h}
+	 \left( \vec{u}_h \right) \right)\f$
+	<li> computation of the rhs \f$\vec{f}_h\f$
+	<li> (this allows the computation of \f$\vec{d}_h(\vec{u}_h)
+		:= A_h \vec{u}_h - \vec{f}_h\f$ )
+	</ul>
+	
+<li> stationary non-linear case
+	<ul> 
+	<li> computation of the preconditioner
+	 \f$J_h(\vec{u}_h)
+	 := \frac{\partial \mathcal{A}_h(\vec{v}_h)}{\partial \vec{v}_h}
+	 \left( \vec{u}_h \right)\f$
+	<li> computation of the defect 
+		\f$\vec{d}_h(\vec{u}_h)
+		:= \mathcal{A}_h(\vec{u}_h)-\vec{f}_h\f$
+	</ul>
+	
+<li> time-dependent case
+	<ul>  
+	<li> the computation of the preconditioner 
+		\f$J_h(\vec{u}_h, s_m, s_a)	
+		:= s_m M_h
+		   + s_a \frac{\partial \mathcal{A}_h(\vec{v}_h)}{\partial \vec{v}_h}
+		   	\left( \vec{u}_h \right)\f$
+	<li> the computation of the defect 
+		\f$\hat{\vec{d}}_h(\vec{u}_h, s_m, s_a)
+		 := s_m M_h \vec{u}_h 
+		   + s_a \mathcal{A}_h(\vec{u}_h)\f$
+	</ul>
+</ul>
+
+Thus, the building blocks of every of the three needs are the following parts:
+<ul>
+<li> Defect
+	<ul> 
+	<li> Mass-defect \f$\mathcal{M}(\vec{u}_h) \equiv M_h \vec{u}_h\f$
+	<li> Stiffness-defect \f$\mathcal{A}(\vec{u}_h)\f$
+	<li> Right-Hand Side \f$\vec{f}_h\f$
+	</ul>
+
+<li> Jacobian
+	<ul>
+	<li> Mass-Jacobian \f$ \frac{\mathcal{M}_h(\vec{v}_h)}{\partial \vec{v}_h}
+		 \left( \vec{u}_h \right) \equiv M_h\f$
+	<li> Stiffness-Jacobian \f$ \frac{\mathcal{A}_h(\vec{v}_h)}{\partial \vec{v}_h}
+		 \left( \vec{u}_h \right) \f$
+	</ul>
+</ul>
+
+A discrization can therefore be split up in this smaller parts.
+
+<hr>
+\section secElemDisc Element Discretization
+<hr>
+
+Many discretizations like Finite Elements and Finite Volumes base on an
+element by element assembling of the needed Stiffness- and Mass-matrix.
+This can be used to implement the forementioned building blocks on an
+element by element basis.
+
+Specially those element assemblings does only need element-local 
+information. These informations are:
+<ul>
+<li> the element itself
+<li> the local degrees of freedom of the element
+<li> the local defect/jacobian/rhs
+</ul>
+
+
+
+ */

@@ -1,0 +1,493 @@
+#!/bin/bash
+######################################################################
+# ugcomplete
+#-------------------------------------------------------------------
+# author: Martin Rupp, Stefan Grein, Andreas Vogel
+######################################################################
+
+# please use LANG=C in front of sed, like this `LANG=C sed ...`
+# otherwise, some terminals print out an "RE error: illegal byte sequence"-error.
+
+ug_print_parameter()
+{
+	local filename=$1
+	local word=$2
+
+	if [[ "$filename" == *ug_util.lua* ]]; then return; fi	
+	
+	local beginRegex="[.GetHas]*Param[NumberOptionBool ]*"
+
+	local relLines=`LANG=C sed -n "/util${beginRegex}/{
+	:loop
+	s/.*util\(${beginRegex}\)(\(\"${word}[^)]*\)).*/\1, \2/g
+	/util${beginRegex}/{
+	N
+	s/\n//g
+	b loop
+	}
+	p
+	}" $filename`
+	
+	
+	maxSize=0
+	while read -r line
+	do
+		IFS="," read -ra LINE_ARRAY <<< "$line"
+		
+		argSize="${#LINE_ARRAY[@]}"
+		# arg-name
+		if [ "$argSize" -ge "1" ]; then  
+			name=`LANG=C sed 's/\"//g' <<< ${LINE_ARRAY[1]}`; 
+			size="${#name}"
+			if [ $size -gt $maxSize ]; then maxSize=$size; fi 
+		fi  	
+	done <<< "$relLines"
+	maxSize=$(($maxSize + 1))
+	
+	while read -r line
+	do
+		# replace options from {1,2,3} -> [1|2|3]
+		line=`LANG=C sed ':redo
+		s/{\([^},]*\),\([^}]*\)}/{\1\|\2}/
+		t redo' <<< $line`
+		line=`LANG=C sed 's/{\([^}]*\)}/[\1\]/g' <<< $line`
+		
+		# replace all comma (not in quotes) by separation character (@)	
+		line=`LANG=C sed 's/\("[^"]*"\)/<\1>/g' <<< $line`
+		line=`LANG=C sed 's/,\([^",]*<"\)/@\1/g' <<< $line`
+		line=`LANG=C sed 's/\(">[^",]*\),/\1@/g' <<< $line`
+		line=`LANG=C sed 's/\(<"\)/"/g' <<< $line`
+		line=`LANG=C sed 's/\(">\)/"/g' <<< $line`
+
+		IFS="@" read -ra LINE_ARRAY <<< "$line"
+		argSize="${#LINE_ARRAY[@]}"
+		
+		if [ "$argSize" -ge "1" ]; then 
+			echo ""
+		fi
+		# type
+		type=""
+		if [ "$argSize" -ge "1" ]; then 
+			type="${LINE_ARRAY[0]}";
+			type=`LANG=C sed 's/.GetParamNumber/(number)/g' <<< $type`
+			type=`LANG=C sed 's/.GetParamBool/( bool )/g' <<< $type`
+			type=`LANG=C sed 's/.HasParamOption/(option)/g' <<< $type`
+			type=`LANG=C sed 's/.GetParam/(string)/g' <<< $type`
+			echo -n "$type";
+		fi 
+	
+		# arg-name
+		if [ "$argSize" -ge "2" ]; then  
+			name=`LANG=C sed 's/\"//g' <<< ${LINE_ARRAY[1]}`; 
+			printf " %-${maxSize}s: " "$name"
+		fi  	
+	
+		# description
+		local i=3
+		if [ "$type" == "(option)" ]; then i=2; fi  
+		if [ "$argSize" -gt "$i" ]; then 
+			name=`LANG=C sed 's/.*\"\([^"]*\)\".*/\1/g' <<< ${LINE_ARRAY[$i]}`; 
+			echo -n "$name "
+		fi 
+	
+		# default
+		if [ "$argSize" -ge "3" ]; then
+			if [ "$type" != "(option)" ]; then 
+			name=`LANG=C sed 's/\"//g' <<< ${LINE_ARRAY[2]}`; 
+			echo -n "(default: $name) "
+			fi
+		fi
+		
+		# options
+		if [ "$argSize" -ge "5" ]; then 
+			echo -n "${LINE_ARRAY[4]}"; 
+		fi 
+		# next line
+	done <<< "$relLines"
+	
+}
+
+#####################################################
+# get all parameters to ug4 lua scripts:
+# they are formed like 
+#  util.GetParam("<parameter>"
+#  util.GetParamNumber("<parameter>"
+#  util.HasParamOption("<parameter>"
+#
+#  if ug_load_script is found, ug_add_parameter_completion is called recursively
+#  completionAllFiles is an array which prevents infinite loops
+#####################################################
+ug_add_parameter_completion()
+{
+	local filename=$1
+	local word=$2
+	local i=$3
+	local displays=$4
+
+	if [ -e $filename ]; then	
+		######### check file is not already parsed
+		for (( j=0; j<completionNrOfFiles; j++ ))
+		do
+			if [ ${completionAllFiles[j]} = $filename ]; then
+				return $i
+			fi
+		done
+		completionAllFiles[completionNrOfFiles++]=$filename
+	
+		# don't use echo $word | grep "^-[A-Za-z0-9_]*$" here!!! 
+		# we only want "normal" words which don't interfere with sed
+		
+		if [[ $word =~ ^-[A-Za-z0-9_]*$ ]];
+		then
+		
+			# print info on params		
+			if [[ $displays -gt 0 ]]; then
+				ug_print_parameter $filename $word
+			fi
+			
+			# save result in variable, otherwise "too many open files" error
+			local texx
+			texx=`LANG=C sed -n 's/.*util.[A-Za-z]*[ \t]*([ \t]*"\('$word'[^"]*\)".*/\1/p' < $filename`			
+		
+		##### check for parameters in file
+			# open the file $filename,
+			# with sed, get all words with util.*(<word>)
+			for line in $texx
+			do			
+				# we only want "normal" words
+				if [[ $line =~ ^-[A-Za-z0-9_]*$ ]];
+				then
+					# check if word is already in completions
+					b="0"
+					for (( j=0; j<i; j++ ))
+					do
+						if [ ${COMPREPLY[j]} = $line ]; then
+							b="1"
+						fi
+					done
+					if [ $b = "0" ]; then
+						COMPREPLY[i++]="$line";
+					fi
+				fi							
+			done
+			
+			texx=`LANG=C sed -n 's/.*ug_load_script[ \t]*([ \t]*"\([^"]*\)".*/\1/p' < $filename`
+			
+		##### check for ug_load_script in file	
+			for line in $texx
+			do	
+				local containedFile=""
+				local fileDir=`dirname $filename`
+				if [ -e $fileDir/$line ]; then
+					containedFile=$fileDir/$line
+				elif [ -e ./$line ]; then
+					containedFile=$line
+				elif [ -e $UG4_ROOT/scripts/$line ]; then
+					containedFile=$UG4_ROOT/scripts/$line
+				elif [ -e $UG4_ROOT/apps/$line ]; then
+					containedFile=$UG4_ROOT/apps/$line
+				elif [ -e $UG4_ROOT/$line ]; then
+					containedFile=$UG4_ROOT/$line
+				else
+					continue
+				fi
+							
+				ug_add_parameter_completion $containedFile $word $i	$displays #
+				i=$?
+			done			
+		fi
+	fi
+	return $i
+}
+
+######################################################################
+# ugshell_complete is able to complete ugshell:
+# 1. -outproc -ex -noquit -noterm -logtofile
+# 2. files
+# 3. after -ex , completion is only to .lua files, and completion of files in the ug4/apps part, 
+#    so for example ugshell -ex conv<tab>
+# 4. when -ex <luascript> is found in the command line, a sed script is search for util.GetParam("-numRefs") 
+#    and the like, so you get a list of accepted command line parameters.
+# 
+# to use the completion, set UG4_ROOT and source ug4/shell/scripts/ugcomplete or ugbash
+#####################################################
+ugshell_complete()
+{	
+    if [ "${__UGSHELL_PREV_LINE:-}" != "$COMP_LINE" ] || [ "${__UGSHELL_PREV_POINT:-}" != "$COMP_POINT" ]; then
+        __UGSHELL_PREV_LINE=$COMP_LINE
+        __UGSHELL_PREV_POINT=$COMP_POINT
+        UGSHELL_TAB_KEY_HIT=1
+        #echo "UGSHELL_TAB_KEY_HIT: reset (line changed)"
+    else
+        UGSHELL_TAB_KEY_HIT=$((UGSHELL_TAB_KEY_HIT+1))
+        #echo "UGSHELL_TAB_KEY_HIT: $UGSHELL_TAB_KEY_HIT"
+    fi
+
+	local UG_SHOW_PARAMS=0
+    
+    if [ "$UGSHELL_TAB_KEY_HIT" -ge "3" ]; then
+    	UG_SHOW_PARAMS=1   	
+        UGSHELL_TAB_KEY_HIT=1
+        #echo "UGSHELL_TAB_KEY_HIT: reset (after display)"
+    fi
+    
+	# "RE error: illegal byte sequence" problem occurs when LANG environment is wrong.
+	# it is now set to LANG=C temporarily (see texx line above)
+	# we maybe have to change this when we are using UTF8 for files or similar
+		
+	local word="${COMP_WORDS[COMP_CWORD]}"
+  	local i=0
+	local filename  
+	local b
+
+	while read line; do
+		COMPREPLY[i++]=$line
+	done < <(compgen -fW "-outproc -ex -noquit -noterm -logtofile" -- $word)
+	
+	# get absolute UG4 root
+	# for compatibilty to mac, don't use realpath or readlink here.
+	curDir=`pwd`
+	cd "$UG4_ROOT"
+	UG4_ROOT_absolute=`pwd`
+	cd "$curDir"
+
+	
+######### get completions in directory $UG4_ROOT/apps/ #########
+	if [ -d $UG4_ROOT/apps ] && [ $UG4_ROOT_absolute/apps != "$curDir" ] && [ ${COMP_WORDS[COMP_CWORD-1]} = "-ex" ];
+	then 		
+		cd "$UG4_ROOT/apps"
+		while read line; do
+			[[ -d $line ]] && COMPREPLY[i++]=$line/
+			[[ "${line##*.}" = "lua" ]] && COMPREPLY[i++]=$line
+		done < <(compgen -f -- $word)
+		cd "$curDir"
+
+
+######### get lua file completions #########
+	else
+	
+	### file completions
+		while read line;
+		do 
+			COMPREPLY[i++]=$line
+		done < <(compgen -f -- "$word")  
+
+### -ex lua file found, then do parameter completion
+		for (( c=0; c<COMP_CWORD; c++ ))
+		do
+			if [ "${COMP_WORDS[$c]}" = "-ex" ]; then
+				if [ -e ${COMP_WORDS[c+1]} ]; then
+					filename=${COMP_WORDS[c+1]}
+				elif [ -e $UG4_ROOT/apps/${COMP_WORDS[c+1]} ]; then
+					filename=$UG4_ROOT/apps/${COMP_WORDS[c+1]}
+				else
+					continue
+				fi
+				
+				completionAllFiles={}
+				completionNrOfFiles=0
+				
+				### we found a file, do parameter completion
+				local IFS_BAK=$IFS
+				IFS=$'\n'			
+				ug_add_parameter_completion $filename $word $i $UG_SHOW_PARAMS 
+				
+				IFS=$IFS_BAK
+				i=$?
+				break
+			fi
+		done
+	fi
+}
+
+
+# ugshell completion
+
+complete -o plusdirs -F ugshell_complete -o nospace ugshell
+complete -o plusdirs -F ugshell_complete -o nospace luashell
+complete -o plusdirs -F ugshell_complete -o nospace gridshell
+
+
+
+######################################################################
+# ugshell_complete_gdb 
+#-----------------------
+# bash completion when using gdb --args ugshell
+######################################################################
+ugshell_complete_gdb()
+{
+	for (( c=0; c<COMP_CWORD; c++ ))
+  	do
+  		if [ "${COMP_WORDS[$c]}" = "--args" ] && [ "${COMP_WORDS[$c+1]}" = "ugshell" ]; then
+  			ugshell_complete
+			return
+  		fi
+  	done
+}
+
+# gdb completion
+complete -W "--args" -F ugshell_complete_gdb -o nospace gdb
+
+######################################################################
+# ugshell_complete_ugsubmit 
+#---------------------------
+# bash completion when using ugsubmit <params> --- ugshell 
+######################################################################
+ugshell_complete_ugsubmit()
+{
+	for (( c=0; c<COMP_CWORD; c++ ))
+  	do
+		if [ "${COMP_WORDS[$c]}" = "---" ] && [ ${COMP_WORDS[$c+1]} = "ugshell" ]; then
+			ugshell_complete
+			return
+		fi
+  		if [ "${COMP_WORDS[$c]}" = "---" ] && [ -e ${COMP_WORDS[$c+1]} ] && [ `basename ${COMP_WORDS[$c+1]}` = "ugshell" ]; then
+  			ugshell_complete
+			return
+  		fi
+  	done
+}
+
+# ugsubmit completion
+complete -W "-test -nppn -cluster -walltime -mail-start -mail-end -mail-error -mail-arr -verbose -tail -i -dir -scan -Jugene-mode -Jugene-mapfile -Jugene-verbose -Hermit-workspace" \
+ -F ugshell_complete_ugsubmit -o nospace ugsubmit
+
+
+######################################################################
+# ugshell_complete_external 
+#---------------------------
+# bash completion when using mpirun -np 4 ugshell 
+######################################################################
+ugshell_complete_external()
+{
+	for (( c=0; c<=COMP_CWORD; c++ ))
+  	do
+		if [ ${COMP_WORDS[$c]} = "ugshell" ]; then
+			ugshell_complete
+			return
+		fi
+		if [ -e ${COMP_WORDS[$c]} ] && [ `basename ${COMP_WORDS[$c]}` = "ugshell" ]; then
+  			ugshell_complete
+			return
+  		fi
+  	done
+}
+
+
+
+# mpirun completion
+complete -W "-np ugshell" -F ugshell_complete_external -o nospace mpirun
+
+######################################################################
+# cmake completion
+
+CMAKE_COMPLETITIONS="-DCMAKE_TOOLCHAIN_FILE= -DCMAKE_C_COMPILER= -DCMAKE_CXX_COMPILER="
+complete -W "$CMAKE_COMPLETITIONS" -o default -o nospace cmake
+
+######################################################################
+# ugcmake completion
+# ugcmake is just an alias for cmake
+
+alias ugcmake=cmake
+
+UGCMAKE_INTERNAL="-DBUILTIN_BLAS= -DBUILTIN_LAPACK= -DDEBUG_FORMAT="
+
+# create with "ugcmake -DPRINT_PLUGINS_FOR_COMPLETION=ON .."
+COMPLETIONS_UG4_PLUGINS="\
+-Dd3f= \
+-DConvectionDiffusion= \
+-Damg= \
+-DSHTopology= \
+-DBiogas= \
+-DBoutonGenerator= \
+-DcalciumDynamics= \
+-DChloridDiffusion= \
+-DCompressibleNavierStokes= \
+-DElectromagnetism= \
+-DElementQualityStatistics= \
+-DGridHierarchySmoothing= \
+-DIncompressibleNavierStokes= \
+-Djitsg= \
+-DLevelSet= \
+-DMembranePotentialMapping= \
+-DNeuronPlugin= \
+-DNonlinearElastoPlasticity= \
+-DParticleLadenFlow= \
+-DPlasmaMembrane= \
+-DProMesh= \
+-DReceptorKinetic= \
+-DSample= \
+-DSkin= \
+-DStructuredGrid= \
+-DSynapticCalciumDynamics= \
+-DTemplate= \
+-DTKDGenerator= \
+-DVesicleDynamics= \
+-DSG= \
+-DSmallStrainMechanics= \
+-DSuperLU= \
+-DElectricCircuit= \
+-DLimex= "
+
+complete -W "\
+ON \
+OFF \
+None Shiny Scalasca Vampir \
+-DBLAS= \
+-DBLAS_INCLUDE_PATH= \
+-DBLAS_LIBRARIES= \
+-DBUILD_UGDOCU= \
+-DBUILTIN_BLAS= \
+-DBUILTIN_LAPACK= \
+-DBUILTIN_MPI= \
+-DCMAKE_CXX_COMPILER= \
+-DCMAKE_CXX_FLAGS= \
+-DCMAKE_C_COMPILER= \
+-DCMAKE_C_FLAGS= \
+-DCMAKE_TOOLCHAIN_FILE= \
+-DCOMPILE_INFO= \
+-DCPU= \
+-DCUDA= \
+-DDEBUG= \
+-DDEBUG_FORMAT= \
+-DDEBUG_LOGS= \
+-DDIM= \
+-DEMBEDDED_PLUGINS= \
+-DHLIBPRO= \
+-DPHREEQC= \
+-DHYPRE= \
+-DINTERNAL_BOOST= \
+-DLAPACK= \
+-DLAPACK_INCLUDE_PATH= \
+-DLAPACK_LIBRARIES= \
+-DMETIS= \
+-DOPENMP= \
+-DPARALLEL= \
+-DPARMETIS= \
+-DPCL_DEBUG_BARRIER= \
+-DPOSIX= \
+-DPRECISION= \
+-DPROFILER= \
+-DPROFILER= \
+-DPROFILER= \
+-DPROFILER= \
+-DPROFILE_BRIDGE= \
+-DPROFILE_PCL= \
+-DSHELLTYPE= \
+-DSTATIC_BUILD= \
+-DTARGET= \
+-DTETGEN= \
+-DTKDGenerator= \
+-DinfoFileFound= \
+-DCRS_ALGEBRA= \
+-DCPU_ALGEBRA= \
+-DUSE_LUA2C= \
+-DINTERNAL_MEMTRACKER= \
+-DSHINY_CALL_LOGGING= \
+-DGPU_ALGEBRA= \
+-DPRINT_PLUGINS_FOR_COMPLETION= \
+-DSUPERLU_PATH= \
+$CMAKE_COMPLETITIONS $UGCMAKE_INTERNAL $COMPLETIONS_UG4_PLUGINS"  -o default -o nospace ugcmake
+
+
+

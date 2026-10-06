@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2019 Jane Doe <jane@example.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+.cproject
+.project
+.settings
+.tags
+.tags_sorted_by_file
+Debug/

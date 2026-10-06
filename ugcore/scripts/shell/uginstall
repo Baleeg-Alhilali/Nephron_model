@@ -1,0 +1,909 @@
+#!/bin/bash
+######################################################################
+# uginstall 0.3
+#-------------------------------------------------------------------
+# created by Martin Rupp 31.05.2012
+# mail: martin.rupp@gcsc.uni-frankfurt.de
+######################################################################
+# uginstall will download and install a number of programs:
+# cmake, doxygen, gcc, gmp, gnuplot, GotoBLAS2, Metis, mpfr, mpc, OpenMPI, ParaView, ParMetis
+# Following steps are made for each installation of programm APP:
+# (LOCAL here is $UG4_LOCAL_INSTALL_DIR, see uginstall_path. default is $HOME/local)
+# - create folder LOCAL
+# - create folder LOCAL/APP
+# - download file, save in LOCAL/APP (see my_download_file)
+# - extract file, store in LOCAL/APP/version
+# - configure the program (depending on the program)
+# - install libraries in LOCAL/APP/lib and lib64, binaries in LOCAL/APP/bin
+#   includes in LOCAL/APP/include ...
+# - create a symbolic link from LOCAL/APP/used to LOCAL/APP/version
+# done.
+# uginstall_config will then set PATH, LDFLAGS, LD_RUN_PATH, LIBRARY_PATH, 
+# and LD_LIBRARY_PATH so you can use the program and the libs.
+# You might need to open up a new console to reset these variables.
+#
+######################################################################################################################################################
+# pre-configuration
+
+downloadMethod=all
+
+# address of svn server to use. can be changed with -svnServer address.
+# svn://fuji.gcsc.uni-frankfurt.de/misc/uginstall
+svnServer="fuji.gcsc.uni-frankfurt.de"
+
+# ip of software server. can be changed with -macServer address.
+softwareServer="141.2.38.55"
+
+print_info()
+{
+	echo "     UGInstall (c) Martin Rupp, GCSC Frankfurt. 2012-2014"
+	echo "-----------------------------------------------------------------"
+}
+
+print_info
+scriptpath="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+source $scriptpath/uginstall_config
+
+echo "UGInstall script path is $scriptpath, UGInstall local install dir is $UG4_LOCAL_INSTALL_DIR"
+echo " "
+
+originalDir=`pwd`
+if [ ! -e $UG4_LOCAL_INSTALL_DIR ]; then mkdir $UG4_LOCAL_INSTALL_DIR; fi
+cd $UG4_LOCAL_INSTALL_DIR
+LOCAL_DIR=$UG4_LOCAL_INSTALL_DIR
+
+######################################################################################################################################################
+# helper scripts
+######################################################################################################################################################
+
+
+# check_license
+# params: 
+# check_license APPNAME
+# if there is a file install_scripts/APPNAME.license, it is displayed
+# otherwise, a warning is displayed to make sure the license is OK.
+# a check to enter yes or no is displayed then
+check_license()
+{
+	local APPNAME=$1
+	clear
+	print_info
+	echo "uginstall will now install $APPNAME"
+	echo " "
+	if [ -e $scriptpath/install_scripts/$APPNAME.license ]; then
+			
+		cat $scriptpath/install_scripts/$APPNAME.license
+		echo ""
+		echo "-----------------------------------------------------------------"
+		echo "uginstall will now install $APPNAME"
+		
+		read -p "Do you accept the license (type in yes or no) ? " -r
+	else
+		echo "WARNING: There is no $APPNAME.license given yet. Please make sure you fulfill the license of the code."
+		read -p "Have you read the license of $APPNAME (type in yes or no) ? " -r
+	fi
+	if [[ ! $REPLY == "yes" ]]; then
+		echo "You replied $REPLY. Please use 'yes' to accept license."
+		exit
+	fi
+}
+
+# my_download_file
+# params:
+# my_download_file filename location destination
+# depending on downloadMethod, this will download
+# direct: download from specified location
+my_download_file()
+{
+	local filename=$1
+	local location=$2
+	local destination=$3	
+	local success=false
+	echo "Download $filename to $destination" 
+	# try direct
+	if [ $success == false ] && ( [ $downloadMethod == "direct" ] || [ $downloadMethod == "all" ] ); then
+		echo ""
+		echo "Trying direct download from $destination..."
+	
+		which wget &> /dev/null
+		if [ $? == 0 ]; then
+			wget $location -O $destination
+		else
+			curl -L $location -o $destination
+		fi
+	
+		if [ ! $? == 0 ]; then 
+			echo "Error downloading from $destination."; 
+			rm $destination
+		else
+			success=true
+		fi
+	fi
+	
+	if [ $success == false ] && ( [ $downloadMethod == "macServer" ] || [ $downloadMethod == "all" ] ); then
+		echo ""
+		echo "Trying software server now: software@$softwareServer:/Volumes/macheath 1/software/Software/uginstall/$filename ."
+		echo " --- Please enter software server password: ---"
+
+		if [ -e $filename.part ]; then rm $filename.part; fi
+
+		scp -r software@$softwareServer:"/Volumes/macheath\ 1/software/Software/uginstall/$filename" $destination
+		if [ ! $? == 0 ]; then 			
+			echo "Error downloading from Software Server.";
+		else
+			success=true
+		fi
+	fi
+	
+	if [ $success == false ] && ( [ $downloadMethod == "svn" ] || [ $downloadMethod == "all" ] ); then
+		if [ -e $filename.part ]; then rm $filename.part; fi
+		
+		echo ""
+		echo "Trying svn server now: $svnServer ."
+		echo "complete svn checkout is: svn export svn://$svnServer/misc/uginstall/$filename $destination"
+		
+		svn export svn://$svnServer/misc/uginstall/$filename $destination
+		
+		if [ ! $? == 0 ]; then 			
+			echo "Error downloading from Software Server.";
+		else
+			success=true
+		fi
+	fi
+	
+	if [ $success == false ]; then
+		exit
+	fi
+	
+}
+
+# my_extract
+# params:
+# my_extract filename
+# extracts a file by its filename e.g.
+# file.tar.gz -> tar xzf file.tar.gz 
+my_extract()
+{
+ 	local filename=$1
+ 	echo "Extracting $filename..."
+	case $filename in
+	*.tar.bz2)	tar xjf $filename ;;
+	*.tar.gz)	tar xzf $filename ;;
+	*.tar.xz)	tar Jxf $filename ;;
+	*.bz2)		bunzip2 $filename ;;
+	*.rar)		unrar x $filename ;;
+	*.gz)		gunzip $filename ;;
+	*.tar)		tar xf $filename ;;
+	*.tbz2)		tar xjf $filename ;;
+	*.tgz)		tar xzf $filename ;;
+	*.zip)		unzip $filename ;;
+	*.Z)		uncompress $filename ;;
+	*.7z)		7z x $filename ;;
+	*)		echo "don't know how to open '$filename'..." ;;
+	esac
+}
+
+
+
+# params:
+# my_download extractedDir renameDir location filename
+# extractedDir is the name of the directory which is created when extracting the archive
+# it will then get renamed to renameDir
+my_download () 
+{
+	local extractedDir=$1
+	local renameDir=$2
+	local location=$3
+	local filename=$4
+	
+	echo "extractedDir = $extractedDir, renameDir = $renameDir, location = $location, filename =$filename" 
+ 	
+	if [ -e $renameDir ]; then
+		echo "$name already downloaded and extracted" 
+	else
+		if [ -e $filename ]; then
+			echo "$filename already downloaded"
+		else 
+			echo "Downloading $filename..."
+
+			if [ -e $filename.part ]; then rm $filename.part; fi
+
+			my_download_file $filename $location $filename.part
+			mv $filename.part $filename
+			echo "done."
+		fi
+		
+		my_extract $filename		
+		mv $extractedDir $renameDir
+	fi
+ }
+
+# my_install_external_build
+# params:
+# my_install_external_build subdir version location filename extractedDir buildCommands(...)
+# installing with build not in source dir
+# downloads file from $location, saves is as $subdir/$version/$filename
+# extracts it to $subdir/$version/src
+# and runs there to rest of the buildCommands 
+# (mostly ../src/configure --prefix=$UG4_LOCAL_INSTALL_DIR/$subdir/$version ; make ; make install )
+my_install_external_build()
+{
+	local subdir=$1
+	local version=$2
+	local location=$3
+	local filename=$4
+	local extractedDir=$5
+	echo "installing $subdir"
+	shift 5
+	# $6+ are commands executed in $subdir/$version/build  
+	echo "subdir = $subdir, version = $version, location = $location, filename = $filename, extractedDir = $extractedDir, buildCommands = $*"
+	
+	if [ -e $subdir/$version/installed ]; then
+		echo "$subdir $version already installed."
+	else
+		check_license $subdir
+		
+		if [ ! -e $subdir ]; then mkdir $subdir; fi
+		cd $subdir
+		# in local/subdir
+		if [ ! -e $version ]; then mkdir $version; fi
+		cd $version
+		# in local/subdir/version
+				
+	
+		my_download $extractedDir "src" $location $filename		
+
+		if [ ! $? == 0 ]; then echo "Error subdir "src" does not exist in `pwd`?"; exit; fi
+		if [ ! -e build ]; then mkdir build; fi		
+		cd build
+		# in local/subdir/version/build		
+		
+		while (( "$#" )); do
+			echo $1
+			$1
+			if [ ! $? == 0 ]; then echo "Error $1 in `pwd`"; exit; fi					
+			shift
+		done
+		
+		echo "$subdir version $version installed!"
+		# in local/subdir/version/build
+		cd ..
+		# in local/subdir/version
+		touch installed				
+		cd ..
+		# in local/subdir
+		if [ -e used ]; then rm used; fi
+		ln -s $version used
+		
+		cd $LOCAL_DIR
+		
+		source $scriptpath/uginstall_config
+	fi
+}
+
+# my_install
+# params:
+# my_install subdir version location filename extractedDir buildCommands(...)
+# installing with build = source dir
+# downloads file from $location, saves is as $subdir/$filename
+# extracts it to $subdir/$version
+# and runs there to rest of the commands 
+# (mostly ../src/configure --prefix=$UG4_LOCAL_INSTALL_DIR/$subdir/$version ; make ; make install )
+# note: if the file can not be downloaded (some clusters prevent http) then
+# my_download searches automatically on the software server on /Software/uginstall/$filename
+my_install()
+{
+	
+	local subdir=$1
+	local version=$2
+	local location=$3
+	local filename=$4
+	local extractedDir=$5
+	echo "installing $subdir"
+	shift 5
+	
+	#echo "subdir = $subdir, version = $version, location = $location, filename =$filename, extractedDir = $extractedDir, buildCommands = $*"
+	
+	if [ -e $subdir/$version/installed ]; then
+		echo "$subdir $version already installed."
+	else
+		check_license $subdir
+		
+		if [ ! -e $subdir ]; then mkdir $subdir; fi
+		cd $subdir
+				
+		#echo "i would download $subdir from $location to $filename with command $command now"
+		my_download $extractedDir $version $location $filename
+	
+		cd $version
+		
+		while (( "$#" )); do
+			eval $1
+			if [ ! $? == 0 ]; then echo "Error $1 in `pwd`"; exit; fi					
+			shift
+		done
+		
+		echo " "
+		echo "---------------------------------------------------------------------------------------"
+		echo " "
+		echo " UGINSTALL: $subdir version $version installed!"
+		echo "you might need to re-source ugbash (or .bashrc) to get access to PATH and libraries"
+		echo " "
+		# in local/subdir/version
+		touch installed				
+		cd ..
+		# in local/subdir
+		if [ -e used ]; then rm used; fi
+		ln -s $version used
+		
+		cd $LOCAL_DIR
+		
+		source $scriptpath/uginstall_config
+	fi
+}
+
+
+######################################################################################################################################################
+# the actual install scripts
+######################################################################################################################################################
+
+install_gmp()
+{	
+	my_install_external_build \
+	gmp 4.3.2 \
+	"http://gcc.petsads.us/infrastructure/gmp-4.3.2.tar.bz2" \
+	gmp-4.3.2.tar.bz2 gmp-4.3.2 \
+	"../src/configure --prefix=$UG4_LOCAL_INSTALL_DIR/gmp/4.3.2/" make "make install"
+}
+
+install_mpfr()
+{
+	my_install_external_build \
+	mpfr 2.4.2 \
+	"http://gcc.petsads.us/infrastructure/mpfr-2.4.2.tar.bz2" \
+	mpfr-2.4.2.tar.bz2 mpfr-2.4.2 \
+	"../src/configure --prefix=$UG4_LOCAL_INSTALL_DIR/mpfr/2.4.2" make "make install"
+}
+
+install_mpc()
+{
+	install_mpfr
+	install_gmp
+	
+	my_install_external_build \
+	mpc 0.8.1 \
+	"http://gcc.petsads.us/infrastructure/mpc-0.8.1.tar.gz" \
+	mpc-0.8.1.tar.gz mpc-0.8.1 \
+	"../src/configure --prefix=$UG4_LOCAL_INSTALL_DIR/mpc/0.8.1" make "make install"
+}
+
+install_doxygen()
+{
+	my_install \
+	doxygen 1.8.7 \
+	"http://ftp.stack.nl/pub/users/dimitri/doxygen-1.8.7.src.tar.gz" \
+	doxygen-1.8.7.src.tar.gz doxygen-1.8.7 \
+	"./configure --prefix $UG4_LOCAL_INSTALL_DIR/doxygen/1.8.7" make 
+}
+
+install_gcc()
+{
+	install_gmp
+	install_mpfr
+	install_mpc
+	
+	CFLAGS="-O3"
+	CPPFLAGS="-O3"
+	CXXFLAGS="-O3" # -DCHAR_BIT=8
+	export CFLAGS
+	export CXXFLAGS
+	export CPPFLAGS
+	
+	
+	my_install_external_build \
+	gcc 4.4.7 \
+	"http://gcc.petsads.us/releases/gcc-4.4.7/gcc-4.4.7.tar.gz" \
+	gcc-4.4.7.tar.gz gcc-4.4.7 \
+	 "../src/configure --prefix=$UG4_LOCAL_INSTALL_DIR/gcc/4.4.7" make "make install"
+}
+
+install_cmake()
+{
+	my_install_external_build \
+	cmake 3.2.0 \
+	"http://www.cmake.org/files/v3.2/cmake-3.2.0-rc2.tar.gz" \
+	cmake-3.2.0-rc2.tar.gz cmake-3.2.0-rc2 \
+	"../src/bootstrap --prefix=$UG4_LOCAL_INSTALL_DIR/cmake/3.2.0" make "make install"
+}
+
+install_openmpi()
+{	
+	my_install_external_build \
+	openmpi 1.6 \
+	"http://www.open-mpi.org/software/ompi/v1.6/downloads/openmpi-1.6.tar.gz" \
+	openmpi-1.6.tar.gz openmpi-1.6 \
+	"../src/configure --prefix=$UG4_LOCAL_INSTALL_DIR/openmpi/1.6" make "make install"
+}
+
+install_gnuplot()
+{
+	my_install_external_build \
+	"gnuplot" "4.6.0"\
+	"http://sourceforge.net/projects/gnuplot/files/gnuplot/4.6.0/gnuplot-4.6.0.tar.gz"\
+ 	gnuplot-4.6.0.tar gnuplot-4.6.0 \
+ 	"../src/configure --prefix=$UG4_LOCAL_INSTALL_DIR/gnuplot/4.6.0" make "make install"
+}
+
+install_GotoBLAS2()
+{
+	## needs to be compiled with a new version of gfortran. use install_gcc.
+	
+	my_install \
+	GotoBLAS2 "1.13"\
+	"http://www.tacc.utexas.edu/documents/13601/b58aeb8c-9d8d-4ec2-b5f1-5a5843b4d47b"\
+	GotoBLAS2-1.13.tar.gz GotoBLAS2\
+	"./quickbuild.64bit" \	
+	"mkdir lib" \
+	"cp libgoto2.a lib/" \
+	"mkdir include" \
+	"cp cblas.h include/"
+}
+
+install_ParaView()
+{
+	my_install \
+	ParaView "3.14"\
+	"http://www.paraview.org/files/v3.14/ParaView-3.14.1-Linux-32bit.tar.gz"\
+	ParaView-3.14.1-Linux-32bit.tar.gz ParaView-3.14.1-Linux-32bit
+}
+
+
+install_scons()
+{
+	my_install \
+	scons 2.3.1 \
+	"http://sourceforge.net/projects/scons/files/scons/2.3.1/scons-2.3.1.tar.gz/download?use_mirror=garr" \
+	scons-2.3.1.tar.gz scons-2.3.1 \
+	"python setup.py install --prefix=$UG4_LOCAL_INSTALL_DIR/scons/2.3.1/"
+}
+
+
+
+install_boost()
+{
+	my_install \
+	boost 1.56.0 \
+	"http://sourceforge.net/projects/boost/files/boost/1.56.0/boost_1_56_0.tar.gz/download" \
+	boost_1_56_0.tar.gz boost_1_56_0 \
+	"./bootstrap.sh --prefix=$UG4_LOCAL_INSTALL_DIR/boost/1.56.0/" "./b2"
+}
+
+install_clang()
+{
+	svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm
+	cd llvm/tools
+	svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
+	cd ../projects
+	svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
+	cd ..
+	mkdir build
+	cd build
+	../configure --prefix=$UG4_LOCAL_INSTALL_DIR/llvm --enable-optimized
+	make
+}
+
+install_metis()
+{
+	which cmake &> /dev/null
+	if [ $? == 1 ]; then
+		echo "Metis needs cmake. Installing cmake..."
+		install_cmake
+	fi
+
+	my_install \
+	metis "5.0.2"\
+	"http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/metis-5.0.2.tar.gz"\
+	metis-5.0.2.tar metis-5.0.2 \
+	"make config prefix=$UG4_LOCAL_INSTALL_DIR/metis/5.0.2" \
+	"make install"
+}
+
+install_parmetis()
+{
+	which cmake &> /dev/null
+	if [ $? == 1 ]; then
+		echo "Metis needs cmake. Installing cmake..."
+		install_cmake
+	fi
+
+	my_install \
+	parmetis "4.0.2"\
+	"http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-4.0.2.tar.gz"\
+	parmetis-4.0.2.tar parmetis-4.0.2 \
+	"make config prefix=$UG4_LOCAL_INSTALL_DIR/parmetis/4.0.2" \
+	"make install"
+}
+
+install_ANN()
+{
+	local unamestr=`uname`
+	local make_config
+	if [[ "$unamestr" == 'Darwin' ]]; then
+		make_config="macosx-g++"
+	else
+		make_config="linux-g++"
+	fi
+	
+	# add -fPIC flag via ANN_Make-config.path for position independend code
+	# (needed for dynamic libraries)
+	
+	my_install \
+	ANN "1.1.2"\
+	"http://www.cs.umd.edu/~mount/ANN/Files/1.1.2/ann_1.1.2.tar.gz"\
+	ann_1.1.2.tar.gz ann_1.1.2 \
+	"cd ann2fig" \
+	"patch < $scriptpath/install_scripts/ann2fig.patch" \
+	"cd .." \
+	"patch < $scriptpath/install_scripts/ANN_Make-config.patch" \
+	"make $make_config"
+}
+
+make_SuperLU()
+{
+	# choose different makefiles depending on the system
+	# mostly for BLAS reasons.
+	local unamestr=`uname`
+	echo "UGINSTALL: make_SuperLU"
+	if [[ "$unamestr" == 'Darwin' ]]; then		
+		echo "UGINSTALL: On MacOS, using make.inc_mac (BLAS = /System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Versions/Current/libBLAS.dylib)"		
+	   cp $scriptpath/install_scripts/SuperLU/make.inc_mac make.inc
+	elif [[ $HOSTNAME == "cekon.gcsc.uni-frankfurt.de" || $HOSTNAME == "cesari.gcsc.uni-frankfurt.de" || $HOSTNAME == "cizeta.gcsc.uni-frankfurt.de" ]]; then
+		echo "UGINSTALL: On Cekon, using make.inc_cekon (BLAS = /usr/lib64/libblas.so)"
+	   cp $scriptpath/install_scripts/SuperLU/make.inc_cekon make.inc
+	elif [[ "$HOSTNAME" == "juqueen"* ]]; then
+		echo "UGINSTALL: On Juqueen, using make.inc_juqueen_xl"
+	   cp $scriptpath/install_scripts/SuperLU/make.inc_juqueen_xl make.inc
+	   make blaslib
+	elif [[ "$HOSTNAME" == "jrl"* || "$HOSTNAME" == "juwels"* ]]; then
+		echo "UGINSTALL: On Juelich supercomputer, using make.inc_juelich"
+		cp $scriptpath/install_scripts/SuperLU/make.inc_juelich make.inc
+	else	
+		echo "UGINSTALL: Not yet supported cluster, using internal BLAS"
+		cp $scriptpath/install_scripts/SuperLU/make.inc_default make.inc
+		echo "UGINSTALL: make  blaslib" 
+		make blaslib
+	fi
+	echo
+	echo "UGINSTALL: making SuperLU"
+	echo
+	# already in SuperLU directory
+
+	# note: we skip testing (does not work with cross-compiling)	
+	make clean
+	make install
+	make lib
+}
+
+install_tbb()
+{
+	unamestr=`uname`
+	if [[ "$unamestr" == 'Darwin' ]]; then
+		tbbPath="http://www.threadingbuildingblocks.org/sites/default/files/software_releases/mac/tbb42_20140122oss_osx_0.tgz"
+		tbbFile=tbb42_20140122oss_osx_0.tgz
+	else
+		tbbPath="http://www.threadingbuildingblocks.org/sites/default/files/software_releases/linux/tbb42_20140122oss_lin.tgz"
+		tbbFile=tbb42_20140122oss_lin.tgz
+	fi
+	
+	my_install \
+	tbb "4.2"\
+	$tbbPath \
+	$tbbFile tbb42_20140122oss \
+	"echo done."
+}
+
+install_HYPRE()
+{
+	my_install \
+	HYPRE "2.9.0b"\
+	"http://no-direct-link-available"\
+	hypre-2.9.0b.tar.gz hypre-2.9.0b \
+	"cd src" \
+	"./configure" \
+	"make" \
+	"make install"\
+	"cd .."
+}
+
+
+install_SuperLU()
+{
+	my_install \
+	SuperLU "4.3"\
+	"https://portal.nersc.gov/project/sparse/superlu/superlu_4.3.tar.gz"\
+	superlu_4.3.tar.gz SuperLU_4.3 \
+	"make_SuperLU"	
+}
+
+install_PT()
+{
+	my_install \
+	PT "src"\
+	"http://sourceforge.net/projects/paralleltoolbox/files/latest/download"\
+	parallel-toolbox-all.tar parallel-toolbox-all \
+	"pwd"	
+}
+install_LUA()
+{
+	local platform
+	local unamestr=`uname`
+	if [[ "$unamestr" == 'Darwin' ]]; then
+		platform="macosx"
+	else
+		platform="linux"
+	fi
+	
+	my_install \
+	LUA "5.1.4"\
+	"http://www.lua.org/ftp/lua-5.1.4.tar.gz"\
+	lua-5.1.4.tar.gz lua-5.1.4 \
+	"make $platform" \
+	"make local"	
+}
+
+
+install_hlibpro()
+{
+	unamestr=`uname`
+	if [[ "$unamestr" == 'Darwin' ]]; then
+		
+		hlibPath="http://www.hlibpro.com/naimahb8airaiNg7hohp4bai2noot3/hlibpro-2.0.1-MacOSX.tgz"
+		hlibFile=hlibpro-2.0.1-MacOSX.tgz
+	else
+		hlibPath="http://www.hlibpro.com/naimahb8airaiNg7hohp4bai2noot3/hlibpro-2.0.1-Linux.tgz"
+		hlibFile=hlibpro-2.0.1-Linux.tgz
+	fi
+	
+	my_install \
+	hlibpro "2.0.1"\
+	$hlibPath \
+	$hlibFile hlibpro-2.0.1 \
+	""	
+}
+
+
+install_UGIDE()
+{
+	cd $originalDir
+	local eclipsePath=$1	
+	if [ -z $1 ]; then
+		eclipsePath="."
+	fi
+	if [ -e "$eclipsePath/.eclipseproduct" ]; then 
+		my_download_file ugIDE_1.0.0.001.jar \
+			http://gcsc.uni-frankfurt.de/Members/mrupp/ug4-auto-completion/ug4-auto-completion/ugIDE_1.0.0.001.jar \
+			$eclipsePath/dropins/ugIDE_1.0.0.001.jar
+	else
+		echo ".eclipseproduct not found in path '$eclipsePath'."
+		echo "Make sure you are inside the Eclipse Directory. Current directory is `pwd`"
+		echo "or provide eclipse path as parameter: uginstall UGIDE -eclipsepath /path/to/eclipse"
+	fi 
+}
+
+install_cppcheck()
+{
+	my_install \
+	cppcheck "1.66"\
+	"http://netcologne.dl.sourceforge.net/project/cppcheck/cppcheck/1.66/cppcheck-1.66.tar.bz2"\
+	cppcheck-1.66.tar.bz2 cppcheck-1.66 \
+	"make CFGDIR=$UG4_LOCAL_INSTALL_DIR/cppcheck/used/cfg"	
+}
+
+install_libevent()
+{
+	my_install \
+	libevent "2.0.22"\
+	"http://sourceforge.net/projects/levent/files/libevent/libevent-2.0/libevent-2.0.22-stable.tar.gz/download"\
+	libevent-2.0.22-stable.tar libevent-2.0.22-stable \
+	"./configure --prefix=$UG4_LOCAL_INSTALL_DIR/libevent/2.0.22; make ; make install"	
+}
+
+install_thrift()
+{
+## thrift needs bison > 2.4, can be installed via homebrew (http://brew.sh)
+	my_install \
+	thrift "0.9.2"\
+	"http://mirror.serversupportforum.de/apache/thrift/0.9.2/thrift-0.9.2.tar.gz"\
+	thrift-0.9.2.tar.gz thrift-0.9.2 \
+	"./configure --prefix=$UG4_LOCAL_INSTALL_DIR/thrift/used --with-boost=$UG4_LOCAL_INSTALL_DIR/boost/used --with-libevent=$UG4_LOCAL_INSTALL_DIR/libevent/used; make; make install"
+}
+
+
+install_ninja()
+{
+	subdir=ninja
+	if [ -e $subdir/installed ]; then
+		echo "$subdir  already installed."
+	else
+		check_license $subdir
+	
+		git clone git://github.com/martine/ninja.git 
+		cd ninja
+		git checkout release
+		./configure.py --bootstrap
+		if [ ! $? == 0 ]; then 			
+			echo "Error configuring ninja"
+			exit
+		fi
+		source $scriptpath/uginstall_config
+		touch installed
+	fi
+}
+
+install_tetgen15()
+{
+	# force mac server download as direct download needs filling out form
+	downloadMethod="macServer"
+	
+	my_install \
+	tetgen "1.5.0" \
+	"http://wias-berlin.de/software/tetgen/download2.jsp"\
+	tetgen-1.5.0.tar.gz tetgen-1.5.0 \
+	"PREDCXXFLAGS=\"-O0 -fPIC\" CXXFLAGS=\"-O3 -fPIC\" make tetlib"
+}
+
+######################################################################################################################################################
+
+install_all()
+{
+#	install_gcc
+	install_cmake
+	install_doxygen
+	install_gnuplot
+	install_GotoBLAS2
+	install_openmpi
+	install_ParaView
+	install_clang
+	install_metis
+	install_parmetis
+}
+
+print_usage()
+{
+	echo " uginstall 0.4"
+	echo ""
+	echo " using install path $UG4_LOCAL_INSTALL_DIR (change in uginstall_path)"
+	echo ""  
+	echo " uginstall will download and install a number of programs:"
+	echo " cmake, doxygen, gcc, gmp, gnuplot, GotoBLAS2, Metis, mpfr, mpc, OpenMPI, ParaView, ParMetis, SuperLU, ..."
+	echo " Following steps are made for each installation of programm APP:"
+	echo " - create folder $UG4_LOCAL_INSTALL_DIR"
+	echo " - create folder $UG4_LOCAL_INSTALL_DIR/APP"
+	echo " - download file, save in $UG4_LOCAL_INSTALL_DIR/APP"
+	echo " - extract file, store in $UG4_LOCAL_INSTALL_DIR/APP/version"
+	echo " - configure the program (depending on the program)"
+	echo " - install libraries in ~/local/APP/lib and lib64, binaries in ~/local/APP/bin"
+	echo "   includes in ~/local/APP/include ..."
+	echo " - create a symbolic link from ~/local/APP/used to ~/local/APP/version"
+	echo " done."
+	echo " uginstall_config will then set PATH, LDFLAGS, LD_RUN_PATH, LIBRARY_PATH, "
+	echo " and LD_LIBRARY_PATH so you can use the program and the libs."
+	echo " You might need to open up a new console to reset these variables."
+	echo " "
+    echo " usage:  uginstall <program> <options>"
+	echo "  <program> can be:"
+	echo "	all"
+	echo "	clang       (=clang+llvm from svn)"
+	# last checked 03/2015
+	echo "	cmake       3.2.0                 " `[[ -e cmake/used/installed ]] && echo "(installed)"`
+	# last checked 07/2014	
+	echo "	doxygen     1.8.7                 " `[[ -e doxygen/used/installed ]] && echo "(installed)"`
+	echo "	gcc         4.4                   " `[[ -e gcc/used/installed ]] && echo "(installed)"`
+	echo "	gmp         4.3.2                 " `[[ -e gmp/used/installed ]] && echo "(installed)"`
+	# last checked 01/2014	
+	echo "	gnuplot     4.6.0                 " `[[ -e gnuplot/used/installed ]] && echo "(installed)"`
+	# last checked 01/2014: downloading but not compiling for 64bit	
+	echo "	GotoBLAS2   1.13                  " `[[ -e GotoBLAS2/used/installed ]] && echo "(installed)"`
+	# last checked 01/2014
+	echo "	Metis       5.0.2                 " `[[ -e metis/used/installed ]] && echo "(installed)"`
+	echo "	mpfr        2.4.2                 "	`[[ -e mpfr/used/installed ]] && echo "(installed)"`
+	echo "	mpc         0.8.1                 " `[[ -e mpc/used/installed ]] && echo "(installed)"`
+	# last checked 01/2014	
+	echo "	OpenMPI     1.6                   " `[[ -e openmpi/used/installed ]] && echo "(installed)"`
+	# last checked 01/2014	
+	echo "	ParaView    3.14.1-Linux-32bit    " `[[ -e ParaView/used/installed ]] && echo "(installed)"`
+	# last checked 01/2014		
+	echo "	ParMetis    4.0.2                 " `[[ -e parmetis/used/installed ]] && echo "(installed)"`
+	# last checked 01/2014	
+	echo "	SuperLU     4.3                   " `[[ -e SuperLU/used/installed ]] && echo "(installed)"`
+	echo "	HYPRE       2.9.0b                " `[[ -e HYPRE/used/installed ]] && echo "(installed)"`
+	# last checked 3/2014
+	echo "	scons       2.3.1                 " `[[ -e scons/used/installed ]] && echo "(installed)"`
+	# last checked 9/2014
+	echo "	boost       1.56.0                " `[[ -e boost/used/installed ]] && echo "(installed)"`
+	echo "	hlibpro     2.0.1                 " `[[ -e hlibpro/used/installed ]] && echo "(installed)"`
+	echo "	tbb         4.2                   " `[[ -e tbb/used/installed ]] && echo "(installed)"`
+	# last checked 04/2014
+	echo "	ANN         1.1.2                 " `[[ -e ANN/used/installed ]] && echo "(installed)"`
+	echo "	LUA         5.1.4                 " `[[ -e LUA/used/installed ]] && echo "(installed)"`
+	echo ""
+	echo " Options: "
+	echo "  -fromMac: only download from our software server"
+	echo "  -macServer <address> : specify macServers address (for ssh -R)"
+	echo "  -fromSvn : download from fuji.gcsc.uni-frankfurt.de's svn server"
+	echo "  -svnServer <address> : specify svn server address (for ssh -R)"
+	echo "  example: uginstall SuperLU -svnServer localhost:5337"
+}
+
+######################################################################################################################################################
+
+#  'main'
+###############
+
+# get parameters
+
+eclipsePath="."
+
+param1=$1;
+shift
+
+while [ $# -gt 0 ]
+do
+	#echo $1
+	#echo $2
+	if [ $1 == "-fromMac" ]; then
+		downloadMethod=macServer
+		shift 1
+	elif [ $1 == "-macServer" ]; then
+		softwareServer=$2
+		shift 2
+	elif [ $1 == "-fromSvn" ]; then
+		downloadMethod=svn
+		shift 1
+	elif [ $1 == "-svnServer" ]; then
+		downloadMethod=svn
+		svnServer=$2
+		shift 2
+	elif [ $1 == "-eclipsepath" ]; then
+		eclipsePath=$2		
+		shift 2
+	else
+		echo "undefined option $1"
+		exit
+	fi
+done
+
+# call install routines
+case $param1 in
+	clang) install_clang ;;
+	cmake) install_cmake ;;
+	doxygen) install_doxygen ;;
+	gcc) install_gcc ;;	
+	gnuplot) install_gnuplot ;;
+	gmp) install_gmp ;;
+	GotoBLAS2) install_GotoBLAS2 ;;
+	mpc) install_mpc ;;
+	mpfr) install_mpfr ;;
+	OpenMPI) install_openmpi ;;
+	ParaView) install_ParaView ;;
+	Metis) install_metis ;;
+	ParMetis) install_parmetis ;;
+	SuperLU) install_SuperLU ;;
+	UGIDE) install_UGIDE $eclipsePath ;;
+	HYPRE) install_HYPRE ;;
+	scons) install_scons ;;
+	boost) install_boost ;;
+	hlibpro) install_hlibpro ;;
+	tbb) install_tbb ;;
+	ANN) install_ANN ;;
+	LUA) install_LUA ;;
+	PT) install_PT ;;
+	all) install_all ;;
+	cppcheck) install_cppcheck ;;
+	libevent) install_libevent ;;
+	thrift) install_thrift ;;
+	ninja) install_ninja ;;
+	tetgen) install_tetgen15 ;;
+	*) print_usage ;;
+esac

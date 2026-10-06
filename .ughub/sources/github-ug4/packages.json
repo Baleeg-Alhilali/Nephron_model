@@ -1,0 +1,881 @@
+{
+	"minUGHubVersion":	"1.0.0",
+	"packages": [
+		{
+			"name":				"AutodiffForUG4",
+			"url":				"https://github.com/UG4/external_AutodiffForUG4.git",
+			"repoType":			"git",
+			"defaultBranch":		"main",
+			"prefix":			"externals",
+			"license":			"mit",
+			"categories":		["externals"]
+		},
+		{
+			"name":				"BoostForUG4",
+			"url":				"https://github.com/UG4/external_BoostForUG4.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"externals",
+			"license":			"boost",
+			"categories":		["externals"]
+		},
+		{
+			"name":				"ConvectionDiffusion",
+			"url":				"https://github.com/UG4/plugin_ConvectionDiffusion.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"branch": "master",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				},
+
+				{
+					"branch": "2018.4.3.1",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"2018.4.3.1"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"DemoPlugin",
+			"url":				"https://github.com/UG4/plugin_DemoPlugin.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+
+  		{
+			"name":				"d3f",
+			"url":				"https://github.com/UG4/plugin_d3f.git",
+			"repoType":			"git",
+			"defaultBranch":	"main",
+			"prefix":			"plugins",
+			"license":			"eupl",
+			"categories":		["ug4", "plugins"],
+			"dependencies":		[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						},
+						{
+							"name":		"ConvectionDiffusion",
+							"branch":	"master"
+						},
+						{
+							"name":		"Limex",
+							"branch":	"master"
+						},
+						{
+							"name":		"LevelSet",
+							"branch":	"master"
+						},
+						{
+							"name":		"Richards",
+							"branch":	"master"
+						},
+						{
+							"name":		"Smile",
+							"branch":	"master"
+						},
+						{
+							"name":		"SuperLU6",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"d3f_plusplus_app",
+			"url":				"https://github.com/UG4/app_d3f.git",
+			"repoType":			"git",
+			"defaultBranch":	"main",
+			"prefix":			"apps",
+			"license":			"",
+			"categories":		["ug4", "apps"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"d3f",
+							"branch":	"main"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"DocuGen",
+			"url":				"https://github.com/UG4/plugin_DocuGen.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":		[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+	  
+		{
+			"name":				"EigenForUG4",
+			"url":				"https://github.com/UG4/external_EigenForUG4.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"externals",
+			"license":			"mpl2",
+			"categories":		["externals"]
+		},
+
+		{
+			"name":				"PybindForUG4",
+			"url":				"https://github.com/UG4/external_PybindForUG4.git",
+			"repoType":			"git",
+			"defaultBranch":		"main",
+			"prefix":			"externals",
+			"license":			"bsd3-style",
+			"categories":		["externals"]
+		},
+
+		{
+			"name":				"Electromagnetism",
+			"url":				"https://github.com/UG4/plugin_Electromagnetism.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"branch": "master",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				},
+				{
+					"branch": "2018.4.3.1",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"2018.4.3.1"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"electromagnetism_app",
+			"url":				"https://github.com/UG4/app_Electromagnetism.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"apps",
+			"license":			"",
+			"categories":		["ug4", "apps"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"Electromagnetism",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"ElementQualityStatistics",
+			"url":				"https://github.com/UG4/plugin_ElementQualityStatistics.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":		[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"Examples",
+			"url":				"https://github.com/UG4/app_Examples.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"apps",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "apps"],
+			"dependencies":		[
+				{
+					"packages":	[
+						{
+							"name":		"ConvectionDiffusion",
+							"branch":	"master"
+						},
+						{
+							"name":		"SmallStrainMechanics",
+							"branch":	"master"
+						},
+						{
+							"name":		"Electromagnetism",
+							"branch":	"master"
+						},
+						{
+							"name":		"NavierStokes",
+							"branch":	"master"
+						},
+            {
+              "name":   "ProMesh",
+              "branch": "master"
+            },
+            {
+              "name":   "tetgen",
+              "branch": "master"
+            }
+					]
+				}
+			]
+		},
+		{
+            "name":                         "GeoJSON",
+            "url":                          "https://github.com/UG4/tool_GeoJSON.git",
+            "repoType":                     "git",
+            "defaultBranch":        "main",
+            "prefix":                       "tools",
+            "license":                      "",
+            "categories":           ["ug4", "tools"],
+            "dependencies":[
+                {
+                    "packages":     [
+                        {
+                        	"name":         "ProMesh",
+                            "branch":       "master"
+                        }
+                    ]
+                }
+            ]
+        },
+		{
+			"name":				"JSONForUG4",
+			"url":				"https://github.com/UG4/external_JSON.git",
+			"repoType":			"git",
+			"defaultBranch":		"master",
+			"prefix":			"externals",
+			"license":			"MIT",
+			"categories":		["externals"]
+		},
+		{
+			"name":				"JSONToolkit",
+			"url":				"https://github.com/UG4/JSONToolkit.git",
+			"repoType":			"git",
+			"defaultBranch":		"main",
+			"prefix":			"plugins",
+			"license":			"TBD",
+			"categories":			["plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"JSONForUG4",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"JupyterToolbox",
+			"url":				"https://github.com/UG4/plugin_JupyterToolbox.git",
+			"repoType":			"git",
+			"defaultBranch":		"main",
+			"prefix":			"plugins",
+			"license":			"BSD",
+			"categories":			["plugins"],
+			"dependencies":[
+				{
+					"branch": "main",
+					"packages":	[
+						{
+							"name":		"xeus-ug4-kernel",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+
+		},
+		{
+			"name":				"LevelSet",
+			"url":				"https://github.com/UG4/plugin_LevelSet.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+	    {
+			"name":				"Limex",
+			"url":				"https://github.com/UG4/plugin_Limex.git",
+			"repoType":			"git",
+			"defaultBranch":		"master",
+			"prefix":			"plugins",
+			"license":			"",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+
+
+		{
+			"name":				"LuaShell",
+			"url":				"https://github.com/UG4/plugin_LuaShell.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"branch": "master",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				},
+				{
+					"branch": "2018.4.3.1",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"2018.4.3.1"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"NavierStokes",
+			"url":				"https://github.com/UG4/plugin_NavierStokes.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"branch": "master",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				},
+				{
+					"branch": "2018.4.3.1",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"2018.4.3.1"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"navier_stokes",
+			"url":				"https://github.com/UG4/app_NavierStokes.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"apps",
+			"license":			"",
+			"categories":		["ug4", "apps"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ConvectionDiffusion",
+							"branch":	"master"
+						},
+						{
+							"name":		"NavierStokes",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"ParameterEstimator",
+			"url":				"https://github.com/UG4/tool_ParameterEstimator.git",
+			"repoType":			"git",
+			"defaultBranch":	"main",
+			"prefix":			"tools",
+			"license":			"GPL 3.0",
+			"categories":		["ug4", "tools"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"JSONToolkit",
+							"branch":	"main"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"Poroelasticity",
+			"url":				"https://github.com/UG4/plugin_Poroelasticity.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"JSONToolkit",
+							"branch":	"main"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"poroelasticity",
+			"url":				"https://github.com/UG4/app_poroelasticity.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"apps",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "apps"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"Poroelasticity",
+							"branch":	"master"
+						},
+						{
+							"name":		"Limex",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"ProMesh",
+			"url":				"https://github.com/UG4/plugin_ProMesh.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"branch": "master",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						},
+						{
+							"name":		"LuaShell",
+							"branch":	"master"
+						}
+					]
+				},
+
+				{
+					"branch": "2018.4.3.1",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"2018.4.3.1"
+						},
+						{
+							"name":		"LuaShell",
+							"branch":	"2018.4.3.1"
+						}
+					]
+				}
+			]
+		},
+
+
+		{
+			"name":				"SmallStrainMechanics",
+			"url":				"https://github.com/UG4/plugin_SmallStrainMechanics.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"branch": "master",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				},
+				{
+					"branch": "2018.4.3.1",
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"2018.4.3.1"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"Richards",
+			"url":				"https://github.com/UG4/plugin_Richards.git",
+			"repoType":			"git",
+			"defaultBranch":		"master",
+			"prefix":			"plugins",
+			"license":			"individual",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						},
+						{
+							"name":		"AutodiffForUG4",
+							"branch":	"main"
+						},
+						{
+							"name":		"JSONForUG4",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"SuperLU6",
+			"url":				"https://github.com/UG4/plugin_SuperLU6.git",
+			"repoType":			"git",
+			"defaultBranch":		"master",
+			"prefix":			"plugins",
+			"license":			"individual",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"Smile",
+			"url":				"https://github.com/UG4/plugin_Smile.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"individual",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"TemplatePlugin",
+			"url":				"https://github.com/UG4/plugin_TemplatePlugin.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"tetgen",
+			"url":				"https://github.com/UG4/tool_tetgen.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"tools",
+			"license":			"AGPL v3",
+			"categories":		["ug4", "tools"]
+		},
+
+		{
+			"name":				"ugcore",
+			"url":				"https://github.com/UG4/ugcore.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "core"],
+			"dependencies":[
+				{
+					"branch": "master",
+					"packages":	[
+						{
+							"name":		"BoostForUG4",
+							"branch": 	"master"
+						},
+						{
+							"name":		"EigenForUG4",
+							"branch": 	"master"
+						}
+					]
+				},
+				{
+					"branch": "2018.4.3.1",
+					"packages":	[
+						{
+							"name":		"BoostForUG4",
+							"branch": 	"2018.4.3.1"
+						},
+						{
+							"name":		"EigenForUG4",
+							"branch": 	"2018.4.3.1"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"ugmat",
+			"url":				"https://github.com/UG4/tool_ugmat.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"tools",
+			"license":			"MPL 2.0",
+			"categories":		["ug4", "tools"]
+		},
+
+		{
+			"name":				"ugvec",
+			"url":				"https://github.com/UG4/tool_ugvec.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"tools",
+			"license":			"MPL 2.0",
+			"categories":		["ug4", "tools"]
+		},
+
+		{
+			"name":				"UGTest",
+			"url":				"https://github.com/UG4/plugin_UGtest.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"Util",
+			"url":				"https://github.com/UG4/plugin_Util.git",
+			"repoType":			"git",
+			"defaultBranch":		"main",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":			["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"unsat_flow",
+			"url":				"https://github.com/UG4/unsat_flow.git",
+			"repoType":			"git",
+			"defaultBranch":	"main",
+			"prefix":			"apps",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "apps"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						},
+						{
+							"name":		"Richards",
+							"branch":	"master"
+						},
+						{
+							"name":		"JSONToolkit",
+							"branch":	"main"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name":				"ParameterEstimation",
+			"url":				"https://github.com/UG4/plugin_ParameterEstimation.git",
+			"repoType":			"git",
+			"defaultBranch":	"master",
+			"prefix":			"plugins",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "plugins"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		},
+
+		{
+			"name":				"xeus-ug4-kernel",
+			"url":				"https://github.com/UG4/xeus-ug4.git",
+			"repoType":			"git",
+			"defaultBranch":		"master",
+			"prefix":			"tools",
+			"license":			"AGPL v3",
+			"categories":		["ug4", "tools"]
+		},
+
+		{
+			"name":				"Tutorials",
+			"url":				"https://github.com/UG4/app_Tutorials.git",
+			"repoType":			"git",
+			"defaultBranch":	"main",
+			"prefix":			"apps",
+			"license":			"lgpl_ug4",
+			"categories":		["ug4", "apps"],
+			"dependencies":[
+				{
+					"packages":	[
+						{
+							"name":		"ugcore",
+							"branch":	"master"
+						},
+						{
+							"name":		"ConvectionDiffusion",
+							"branch":	"master"
+						}
+					]
+				}
+			]
+		}	
+
+	]
+}

@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2010-2012:  G-CSC, Goethe University Frankfurt
+ * Author: Andreas Vogel
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageLDAssemblingConcept Assembling Concept
+
+libDiscretization provides two interface types to facilitate the implementation
+and reusability of discretization. These concepts are described in the following.
+This is done in three steps.
+
+First, a general describtion of the PDE problems is given. 
+- \ref secGeneralProblemDescribtion "General Problem Description"
+
+Then, a categorization of the different problems is presented together 
+with the needs of the implementation.
+These needs give rise to a first Interface class. 
+
+- \subpage pageLDCategorization "Categorization of Problems"
+- \subpage pageLDAssembleInterface "Assemble Interfaces"
+
+In a third step an even finer splitting of the problem is described. This
+splitting suggests a second interface class. One implementation of the first
+Interface class will use this finer grained splitting.
+
+- \subpage pageLDGeomObjBasedDiscs "Geometric Object Based Discretizations"
+
+<br>
+
+For any questions, contact andreas.vogel@gcsc.uni-frankfurt.de .
+
+<hr>
+\section secGeneralProblemDescribtion General Problem Description
+
+This section explains what kind of partial differential equations (PDE) can be 
+discretized using libDiscretization.
+
+The starting point for any discretization is a physical domain, \f$ \Omega 
+\subset \mathbb{R}^d \f$. In Ug currently 1d, 2, and 3d domains are 
+supported. Furthermore, for time dependent problems one has a finite time 
+interval \f$ I := [t_{start}, t_{end}] \f$ where the solution is searched.
+
+The PDE model the behaviour of a set of \f$ n \f$ functions on the domain:
+\f{align*}
+	u_i : \Omega \times I &\mapsto \mathbb{R}\\
+	  (\vec{x}, t) &\mapsto u_i(\vec{x}, t).
+\f}
+The support for each function may not be the whole domain, but be only a subset
+of the given domain. This case will be documented (hopefully) soon ....
+
+To simplify notations, one can group all functions to one single function
+\f{align*}
+	\vec{u}(\vec{x},t) := 	\begin{pmatrix} u_1(\vec{x}, t) \\
+										 \vdots \\ u_n(\vec{x}, t)
+						 	\end{pmatrix}.
+\f}
+
+Now, a sytem of PDEs for the unknown functions is given by
+
+\f{align*}
+	\mathcal{M}(\vec{u}) + \mathcal{A}(\vec{u}) &= f, &x\in\Omega,\\
+	\mathcal{B}(\vec{u}) &= 0, &x\in\partial \Omega.
+\f} 
+
+Here, we have the following notation:
+\f{align*}
+	f(\vec{x}, t) &\text{ is a given right - hand side independent of } \vec{u},\\
+	\mathcal{M} &\text{ is a time-dependent operator acting on } \vec{u},\\
+	\mathcal{A} &\text{ is a time-independent operator acting in } \vec{u},\\
+	\mathcal{B} &\text{ are boundary conditions for } \vec{u}.
+\f}
+
+Note, that this gives a well-defined separation of the problem. Usually, the
+term \f$\mathcal{M}\f$ is called Mass-part while \f$ \mathcal{A}\f$ is called
+Stiffness-part (for historic reasons). Some examples:
+<ul>
+<li> Convection-Diffusion-Reaction Equation
+
+\f{align*}
+	\partial_t c - \nabla \left( D \nabla c - \vec{v} c \right) 
+									+ r(c) &= f, &\text{ in } \Omega,\\
+	c &= g, &\text{ on } \partial\Omega_D,\\
+	\frac{\partial c}{\partial \vec{n}} &= h &\text{ on } \partial\Omega_N,
+\f}
+
+with the notation
+<ul>
+<li> \f$ c(\vec{x},t)\f$ is an unknown concentration,
+<li> \f$ D(\vec{x},t)\f$ is the diffusion tensor,
+<li> \f$ v(\vec{x},t)\f$ is the convective velocity,
+<li> \f$ r(c, \vec{x},t)\f$ is the reaction term,
+<li> \f$ f(\vec{x},t)\f$ is a source term independent of \f$\vec{c}\f$.
+</ul>
+
+Interpreting this problem in the above terms one finds:
+
+<ul>
+<li> \f$ \vec{u} = c\f$,
+<li> \f$ \mathcal{M}(c) := \partial_t c \f$,
+<li> \f$ \mathcal{A}(c) := - \nabla \left( D \nabla c - \vec{v} c \right) + r(c)\f$,
+<li> \f$ f = f \f$,
+<li> \f$ \mathcal{B}(c) := \begin{cases}
+		c(\vec{x}, t) - g(\vec{x}, t), &x \in \partial\Omega_D,\\
+ 		\frac{\partial c}{\partial \vec{n}} - h(\vec{x}, t) &x \in \partial\Omega_N.
+ 		\end{cases}.
+ 	\f$
+</ul>
+
+For the stationary problem (i.e. time-independent), one finds \f$ \partial_t c = 0 \f$ 
+and omits the dependency of \f$ t \f$ in for all functions. This problem can be
+written as above, with \f$ \mathcal{M}(c) = 0 \f$.
+
+<li> Density-Driven Flow
+[... to be added ...]
+</ul>
+
+libDiscretization uses this splitting of the problem into different operators
+to implement the problem in a modular way. This is described in 
+\ref pageLDCategorization "Categorization of Problems"
+<br>
+
+*/

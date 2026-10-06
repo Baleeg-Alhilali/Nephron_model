@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2012-2014:  G-CSC, Goethe University Frankfurt
+ * Author: Stephan Grein
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+
+/** \page pageUG4OnMac Prerequisites on Mac OSX
+
+[TOC]
+
+Before installing something on a Mac, make sure things aren't already installed by some other user by checking
+the appropriate commands in the terminal (<tt>gcc --version</tt> and <tt>cmake --version</tt>).
+
+MacOS Versions are:
+- MacOS X 10.5 Leopard
+- MacOS X 10.6 Snow Leopard
+- MacOS X 10.7 Lion
+- MacOS X 10.8 Mountain Lion
+- MacOS X 10.9 Mavericks -> goto \ref secInstallMac109 .
+
+You can obtain your version by clicking on the apple in the left upper corner -> "about this mac".
+The \em terminal is located in <tt>Programs -> utilities (Dienstprogramme) -> Terminal</tt>.
+
+<hr>
+\section secInstallUg Installation of UG4
+Please follow the description at https://github.com/UG4/ughub to obtain a
+copy of \ug4. Below you'll find hints on how to obtain additional software which
+is required to build \ug4.
+
+
+<hr>
+\section secInstallMacCMake CMake
+<hr>
+
+<ul>
+  <li>Download \em CMake:
+    Download the <a href="http://www.cmake.org/files/v2.8/cmake-2.8.12-Darwin64-universal.dmg">
+    CMake 2.8.12 dmg-file</a> (see also <a href="http://www.cmake.org/cmake/resources/software.html">here</a>. 
+    (! minimum version 2.8.10 !)
+  </li>
+  <li>Install \em CMake on your computer.
+    Install the command line tools, when requested during installation.
+  </li>
+  <li>Open a terminal window.
+    Enter <tt>cmake</tt>.
+    If you see some output <tt>cmake version ...</tt> \em CMake has been 
+    installed correctly.
+  </li>
+</ul>
+
+
+<hr>
+\section secInstallMac109 GCC on MacOS X 10.9 Mavericks
+<hr>
+In order to use UG4 with MacOS X 10.9 Commandline Tools should be installed properly. This can be done be entering the following command into Terminal:
+\verbatim
+xcode-select --install
+\endverbatim
+
+\note There have been some problems with old cmake versions and mavericks, especially after upgrading your system. Make sure you have cmake 2.8.12.
+
+
+<hr>
+\section secInstallMacGCC GCC on MacOS X <= 10.8
+<hr>
+
+Easiest way is to use Kenneth Reitz' page on gcc/command line utilities: https://github.com/kennethreitz/osx-gcc-installer/ .
+
+Another way is to use the Apple homepage:
+<ul>
+<li>Create a apple developer ID <a href="https://developer.apple.com/">here</a> (it's free).
+<li>Go to https://developer.apple.com/downloads/index.action, search for "Command Line Tools", pick the appropriate version.
+<li>Install. Now you should have gcc and svn (!) available in the terminal.
+</ul> 
+ 
+\note XCode, installed through the AppStore, will \em not provide you with command line utilities. 
+\note you can install Macports and upgrade your compilers then.
+
+<hr>
+\section secInstallMacAdditional Additional Software
+<hr>
+Highly recommended:
+- SVN : Subversion for the terminal (check in terminal if <tt>svn</tt> works, otherwise install). http://www.wandisco.com/subversion/download#osx
+- OpenMPI : for parallel computing. (check if <tt>mpicc</tt> is available). 
+Other:
+- X11 : Window manager used by some programs, not included in MacOS 10.8. http://xquartz.macosforge.org/
+- doxygen : to create this docu locally.
+- gnuplot
+- ParaView
+
+You can install most of this with \ref pageUginstall.
+
+If you need fortran/gfortran on Mountain Lion: http://web.mit.edu/mfloyd/www/computing/mac/gfortran/, <tt>sudo ln -s /usr/bin/gfortran-4.2 /usr/bin/gfortran</tt>.
+
+
+*/

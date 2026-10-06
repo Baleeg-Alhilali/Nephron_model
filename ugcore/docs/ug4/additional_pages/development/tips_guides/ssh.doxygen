@@ -1,0 +1,197 @@
+/*
+ * Copyright (c) 2012-2013:  G-CSC, Goethe University Frankfurt
+ * Author: Martin Rupp
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4SSH SSH
+
+[TOC]
+
+<hr>
+\section secSSHKeys Exchanging SSH Keys
+
+You can exchange RSA keys so you don't have to type in your password every time 
+you connect.
+
+<ul> 
+  <li>generate local ssh key (empty password):
+    \verbatim
+ssh-keygen -b 2048 -t rsa
+    \endverbatim
+  <li>copy local ssh key to cluster.de (user mrupp):
+    \verbatim
+cat .ssh/id_rsa.pub | ssh mrupp@cluster.de 'umask 077; cat >> .ssh/authorized_keys'
+    \endverbatim
+  </li>
+</ul>
+
+<hr>
+\section secSSHControlmaster SSH Controlmaster
+Some systems don't support exchange of RSA keys, and some might find it insecure.
+There's another possible way so you only have to enter your password once for each session.
+Create the directory <tt>~/.ssh/controlpath</tt> and add the following lines 
+to your <tt>~/.ssh/config</tt> file:
+\verbatim
+host *
+    controlmaster auto
+    controlpath ~/.ssh/controlpath/ssh-%r@%h:%p
+\endverbatim
+You might have to replace ~ with the complete path to your home directory.
+With this, a ssh connection is "reused" by all later connections. So when you always keep one
+connection open, you don't have to reenter your password for new ssh terminals or scp transfers.
+\note Your first ssh connection has to include a -X to use X11.
+\note When something is going wrong, you might have to kill all ssh/scp/sshfs processes to restart.
+
+<hr>
+\section secSSHHopping SSH Hopping
+
+Many supercomputers are only accessible by some fixed IP you specify.
+Since at home we do not have a fixed IP, you have to use SSH hopping.
+Say speedo's IP (<tt>speedo.gcsc.uni-frankfurt.de</tt>) is specified as the 
+connecting IP, and your account is <tt>mrupp\@speedo.gcsc.uni-frankfurt.de</tt>, 
+and <tt>rupp\@supercomputer.de</tt> is the supercomputer account.
+Then you can connect to \c speedo via ssh, and from there further with ssh to 
+the supercomputer:
+\verbatim
+ssh mrupp@speedo.gcsc.uni-frankfurt.de
+ssh rupp@supercomputer.de
+\endverbatim
+
+There are two ways to speed this up
+<ul>
+  <li>hopping in one line:
+    \verbatim
+ssh -t mrupp@speedo.gcsc.uni-frankfurt.de ssh rupp@supercomputer.de
+    \endverbatim
+  </li>
+  <li>automatic hopping: Add the following lines to the file 
+    <tt>~/.ssh/config</tt>
+    \verbatim
+Host supercomputer.de
+User rupp
+ForwardAgent yes
+ProxyCommand ssh mrupp@speedo.gcsc.uni-frankfurt.de nc %h %p
+    \endverbatim
+    now you'll only have to enter
+    \verbatim
+ssh supercomputer.de
+    \endverbatim
+    and enter the passwords.
+  </li>
+</ul>
+
+
+<hr>
+\section secSSHFS FUSE/SSHFS
+
+Manipulating files on remote system can be really tedious.
+Fortunately, with SSHFS you can mount filesystems over ssh into your computer.
+It's like having a supercomputer as a USB stick. For that
+
+<ul>
+ <li>
+   MacOS >= 10.7: download & install <a href="http://github.com/osxfuse/osxfuse/downloads">OSX Fuse</a> and then <a href="http://github.com/osxfuse/sshfs/downloads">SSHFS</a>.
+  </li>
+  <li>MacOS <= 10.6: download & install <a href="http://code.google.com/p/macfuse/downloads/list">macfuse</a>.<br>
+  install sshfs:
+    \verbatim
+cd ~/Downloads/
+svn co http://macfuse.googlecode.com/svn/trunk/filesystems/sshfs/binary sshfs-binaries
+cd sshfs-binaries/
+sudo cpsshfs-static-leopard /usr/bin/sshfs
+    \endverbatim
+    For tiger, use <tt>sshfs-static-tiger</tt>.
+  </li>
+ 
+</ul>
+
+
+Now FUSE/SSHFS is installed.
+Now we'll mount the home directory of <tt>mrupp\@supercomputer.de</tt> to 
+<tt>~/sshvolumes/mrupp\@supercomputer</tt>.
+\verbatim
+mkdir ~/sshvolumes
+mkdir ~/sshvolumes/mrupp@supercomputer
+sshfs mrupp@supercomputer.de: ~/sshvolumes/mrupp@supercomputer -o auto_cache,reconnect,volname=mrupp@supercomputer
+\endverbatim
+
+unmounting is done via
+\verbatim
+umount ~/sshvolumes/mrupp@supercomputer
+\endverbatim
+
+\note SSHFS also works together with \ref secSSHHopping and \ref secSSHKeys.
+For Windows, try <a href="http://dokan-dev.net/en/download/">Dokan library</a>.
+<!--
+TODO: Add install help for windows/linux
+-->
+
+
+<hr>
+\section secSSH_Eclipse SSHFS + Eclipse
+Note for \em Eclipse users:
+You can also import a project on your mounted filesystem.
+For that, create a C/C++ project and as base directory you use the \ug4 base 
+directory.
+You'll then even get SVN info.
+You can also build on the remote server, but don't use the normal build command:
+Right Mouse click on the project -> Properties -> C/C++ Build.
+Disable "use default build command", then enter at "Build Command" something 
+like
+\verbatim
+ssh mrupp@supercomputer.de "cd ug4; cd release; make -j4"
+\endverbatim
+(You can do the same for run/debug settings).
+
+An improved version is
+\verbatim
+/bin/bash ${ProjDirPath}/scripts/shell/sshfsmake mrupp@supercomputer.de ug4/debug /Users/mrupp/ug4/debug /Volumes/mrupp@supercomputer/ug4/debug  -j4 -k
+\endverbatim
+See <tt>ug4/scripts/shell/sshfsmake</tt> for details (basically you are calling 
+<tt>ssh mrupp\@supercomputer.de "cd ug4/debug; make -j4"</tt>, and then 
+substituting remote paths with local ones, so \em Eclipse knows which files 
+contain errors).
+
+Since SSHFS is not as fast as your local drive, you might want to disable the 
+most bandwith consuming things (at Project Preferences):
+- C/C++ Build -> Discovery Options: Disable "Automated discovery of paths and symbols"
+- C/C++ Build -> Logging: Disable Logging
+- C/C++ General -> Indexer -> Disable Indexer
+
+If that does not help, consider \em Eclipse -> Preferences -> Team -> SVN -> 
+Performance, altough deactivating "deep outgoing state" is not recommended.<br>
+Remember that \em Eclipse does not know that the files are not on your local 
+machine, so when you are doing big SVN checkouts in \em Eclipse, all data is 
+going to your computer, and then to the remote machine. 
+Consider using the remote shell for those tasks.
+
+See also \ref secSSH_outdatedSVN.
+
+*/

@@ -1,0 +1,43 @@
+file(REMOVE_RECURSE
+  "/Users/alhilaba/UG4_promesh_ogrid/bin/plugins/libProMesh.dylib"
+  "/Users/alhilaba/UG4_promesh_ogrid/bin/plugins/libProMesh.pdb"
+  "CMakeFiles/ProMesh.dir/mesh.cpp.o"
+  "CMakeFiles/ProMesh.dir/mesh.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/promesh_plugin.cpp.o"
+  "CMakeFiles/ProMesh.dir/promesh_plugin.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/register_coordinate_transform_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/register_coordinate_transform_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/register_mesh.cpp.o"
+  "CMakeFiles/ProMesh.dir/register_mesh.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/register_meshing_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/register_meshing_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/register_selection_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/register_selection_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/register_subset_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/register_subset_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/coordinate_transform_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/coordinate_transform_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/file_io_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/file_io_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/grid_generation_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/grid_generation_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/measure_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/measure_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/quality_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/quality_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/refinement_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/refinement_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/remeshing_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/remeshing_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/selection_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/selection_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/subset_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/subset_tools.cpp.o.d"
+  "CMakeFiles/ProMesh.dir/tools/topology_tools.cpp.o"
+  "CMakeFiles/ProMesh.dir/tools/topology_tools.cpp.o.d"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/ProMesh.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

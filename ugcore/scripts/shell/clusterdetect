@@ -1,0 +1,49 @@
+#!/bin/bash
+######################################################################
+# clusterdetect
+######################################################################
+
+if [ -z "$UGSUBMIT_TYPE" ]; then
+
+	if [ "$HOSTNAME" = "cekon.gcsc.uni-frankfurt.de" ]; then
+		UGSUBMIT_TYPE=cekon
+	elif [ "$HOSTNAME" = "cesari.gcsc.uni-frankfurt.de" ]; then
+		UGSUBMIT_TYPE=cesari
+	elif [[ "$HOSTNAME" = "juqueen"* ]]; then
+		UGSUBMIT_TYPE=Juqueen
+	elif [[ "$HOSTNAME" = "jrl"* ]]; then
+		UGSUBMIT_TYPE=Jureca
+	elif [[ "$HOSTNAME" = "juwels"* ]]; then
+		UGSUBMIT_TYPE=Juwels
+	elif [[ "$HOSTNAME" = "sdlogin"* ]]; then
+		UGSUBMIT_TYPE=SDCluster
+	elif [[ "$HOSTNAME" = "dora"* ]]; then
+		UGSUBMIT_TYPE=DoraCSCS
+	elif [[ "$HOSTNAME" = "eslogin"* ]]; then
+		if [ "$SITE_PLATFORM_NAME" = "hornet" ]; then
+			UGSUBMIT_TYPE=Hornet
+		elif [ "$SITE_PLATFORM_NAME" = "hazelhen" ]; then
+			UGSUBMIT_TYPE=Hazelhen
+		elif [ "$SITE_PLATFORM_NAME" = "hermit" ]; then
+			UGSUBMIT_TYPE=Hermit
+		else
+			echo "WARNING: couldn't detect cluster type!"
+		fi
+	elif [[ "$HOSTNAME" = "hawk-login"* ]]; then
+		UGSUBMIT_TYPE=Hawk
+  elif [[ "$HOSTNAME" = "hunter-login"* ]]; then
+		UGSUBMIT_TYPE=Hunter
+	elif [[ "$HOSTNAME" = "maar-gan"* ]]; then
+		UGSUBMIT_TYPE=Maar-Gan
+	else
+		unamestr=`uname`
+		if [[ "$unamestr" = 'Darwin' ]]; then
+			UGSUBMIT_TYPE=mpi
+			export UGSUBMIT_MORE=Apple
+		else
+			UGSUBMIT_TYPE=unknown
+	   	fi   	
+	fi
+	export UGSUBMIT_TYPE
+fi	 
+	

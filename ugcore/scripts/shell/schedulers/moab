@@ -1,0 +1,78 @@
+#!/bin/bash
+######################################################################
+#                    MOAB
+# The MOAB Workload manager
+# see http://www.adaptivecomputing.com/resources/docs/mwm/moabusers.php
+# and for LLNL: https://computing.llnl.gov/tutorials/moab/
+#-------------------------------------------------------------------
+# created by Martin Rupp 11.06.2012
+######################################################################
+
+function UJS_Submit
+{
+	if [ $walltime == "unlimited" ]; then
+		walltime=01:00:00
+	fi
+	
+	echo "Cluster: MOAB. Scheduler: msub."
+	echo "Create: $outdir/job.sh"
+	
+	if [ $exclusive == true ]; then
+		echo "WARNING: Exclusive not yet supported on this machine."
+	fi	
+	
+	cat > $outdir/job.sh << EOF
+#MSUB -N $jobname
+#MSUB -e $outdir/job.error
+#MSUB -o $outdir/job.output
+#MSUB -m $pbsMailtype
+#MSUB -V
+#MSUB -l walltime=$walltime
+#MSUB -l nodes=$nppn
+#MSUB -l qos=standby
+srun -n $npe --job-name=$jobname $executable $args
+EOF
+
+	commandline="msub $outdir/job.sh"
+	echo " command:      "$commandline >> info.txt
+
+	if [ $test == true ]; then
+		echo "ONLY testing - NOT executing."
+		echo "Submit/Start: $commandline"
+		return
+	fi
+	
+	if [ $interactive == true ]; then
+		echo "interactive mode currently not supported on MOAB. Aborting."
+		exit
+	else			
+		$commandline > $outdir/job.output	
+		return=$?	
+		if [ ! $return == 0 ]; then
+			echo "ERROR: msub returned $return. Job has NOT been scheduled."
+			cat $outdir/job.output		
+			exit
+		fi
+	
+		sleep 1
+		jobid=`cat job.output | sed -n 2p`
+	fi
+}
+
+
+function UJS_GetOptions
+{
+	### set maximal ppn and pe. 
+	nppnmax=4
+	pemax=1	
+}
+
+function UJS_Info
+{
+	showq -w user=$USER	
+}
+
+function UJS_Cancel
+{
+	mjobctl -c $1	
+}

@@ -1,0 +1,97 @@
+#!/bin/bash
+######################################################################
+# clusters
+#-------------------------------------------------------------------
+# created by Martin Rupp 28.03.2012
+# this file is used by ugsubmit/ugcancel/uginfo to access all clusters
+# see below for information how to add your own cluster implementation
+######################################################################
+
+#cekon 			slurm+mpirun 	1 	92
+#hermit 		qsub+aprun 		32 	65536
+#NecNehalem		qsub+mpirun		4	1024
+#Jugene			LL+mpirun		4	65536
+#Jugene			slurm+aprun		4	65536
+#Hawk			qsub+mpirun
+
+source $scriptpath/clusterdetect
+
+if [ $UGSUBMIT_TYPE == "Hermit" ] || [ $UGSUBMIT_TYPE == "Hazelhen" ] || [ $UGSUBMIT_TYPE == "Hornet" ] || [ $UGSUBMIT_TYPE == "NecNehalem" ] || [ $UGSUBMIT_TYPE == "HermitOrHornet" ]; then
+
+	source $scriptpath/schedulers/hermit
+
+elif [ $UGSUBMIT_TYPE == "Hawk" ]; then
+
+ 	source $scriptpath/schedulers/hawk
+
+elif [ $UGSUBMIT_TYPE == "Hunter" ] || [ $UGSUBMIT_TYPE == "hunter" ]; then
+
+ 	source $scriptpath/schedulers/hunter
+elif [ $UGSUBMIT_TYPE == "Maar-Gan" ] || [ $UGSUBMIT_TYPE == "maar-gan" ]; then
+
+ 	source $scriptpath/schedulers/maar-gan
+
+elif [ $UGSUBMIT_TYPE == "Vulcan" ] || [ ""$UGSUBMIT_TYPE == "vulcan" ]; then
+
+ 	source $scriptpath/schedulers/vulcan
+
+elif [ $UGSUBMIT_TYPE == "Jugene" ]; then
+
+	source $scriptpath/schedulers/jugene
+	
+elif [ $UGSUBMIT_TYPE == "Juqueen" ]; then
+	source $scriptpath/schedulers/juqueen
+	
+elif [ $UGSUBMIT_TYPE == "Jureca" ]; then
+	source $scriptpath/schedulers/jureca
+	
+elif [ $UGSUBMIT_TYPE == "Juwels" ]; then
+	source $scriptpath/schedulers/juwels
+	
+elif [ $UGSUBMIT_TYPE == "SDCluster" ]; then
+	source $scriptpath/schedulers/sdcluster
+
+elif [ $UGSUBMIT_TYPE == "Shaheen" ]; then
+	source $scriptpath/schedulers/shaheen
+
+elif [ $UGSUBMIT_TYPE == "mpi" ] || [ $UGSUBMIT_TYPE == "mpi-foreground" ]; then
+
+	source $scriptpath/schedulers/mpi
+
+elif [ $UGSUBMIT_TYPE == "mpi-background" ]; then
+
+	source $scriptpath/schedulers/mpi-background
+	
+elif [ $UGSUBMIT_TYPE == "cekon" ]; then
+
+	source $scriptpath/schedulers/cekon
+	
+elif [ $UGSUBMIT_TYPE == "cesari" ]; then
+
+	source $scriptpath/schedulers/cesari
+	
+elif [ $UGSUBMIT_TYPE == "DoraCSCS" ]; then
+
+	source $scriptpath/schedulers/dora
+
+elif [ $UGSUBMIT_TYPE == "moab" ]; then
+	source $scriptpath/schedulers/moab
+	
+elif [ $UGSUBMIT_TYPE == "PBSGeneric" ]; then
+	source $scriptpath/schedulers/pbs-generic	
+	
+############################################################
+#
+# you can add your own cluster like this:
+#
+#elif [ $UGSUBMIT_TYPE == "mycluster" ]; then
+#	source $scriptpath/schedulers/mycluster
+#
+# use the schedulers/new_template template file for this
+############################################################
+	
+else
+	echo "" 
+	echo "ERROR: cluster "$UGSUBMIT_TYPE" is not supported."
+	exit
+fi

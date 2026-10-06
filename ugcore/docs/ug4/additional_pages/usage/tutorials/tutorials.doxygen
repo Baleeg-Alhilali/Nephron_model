@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2011-2012:  G-CSC, Goethe University Frankfurt
+ * Author: Sebastian Reiter
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageTutorials Tutorials
+
+<hr>
+\section secScripting Scripting
+The scripting tutorials should be visited by anyone who intends to write and understand
+ug4 scripts.
+- \subpage pageScriptTutorial
+
+<hr>
+\section secProfiling Profiling
+Profiling is very useful to get an understanding how much time is required for
+the different tasks performed during a simulation run. It greatly helps in
+optimizing your code, since it helps in identifying the sections of your code,
+in which most time is spend.
+- \subpage pageUG4Profiling
+
+
+<hr>
+\section secParallelScalability Parallel Scalability
+Scalability tests are performed to measure the scaling behavior of a parallel
+application. The scripts and tools introduced in this tutorial can be used to
+see how an existing application performs on different parallel computer architectures
+and how the amount of data processed in a given time scales with the number of
+cores on which the application is executed.
+- \subpage pageUG4ScalabilityTests
+
+
+<hr>
+\section secShellAndLinux Shell and Linux
+Here you find some links to Beginners Guide, Hints etc. for using the Shell and Linux.
+- \subpage pageShellAndLinux
+
+
+
+*/

@@ -1,0 +1,281 @@
+/*
+ * Copyright (c) 2012-2013:  G-CSC, Goethe University Frankfurt
+ * Author: Ingo Heppner
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4ScalabilityTests Scalability Tests
+
+[TOC]
+
+<hr>
+\section secScalabilityTestsGeneral General Practical Information about Scalability Tests
+<hr>
+
+<ul>
+  <li>First of all you have to <strong>enable profiling</strong> by configuring 
+    your build with \em CMake (cf. \ref secEnableProfiling):
+    \code
+cmake -DPROFILER=ON [-DPROFILE_PCL=ON] ..
+    \endcode
+  </li>
+  <li>Then, to get "clean" timing measurements, you should do a <strong>release 
+    build</strong>, i.e.
+    \code
+cmake -DEBUG=OFF ..
+    \endcode
+
+    (Obviously the above configurations can be performed by only one 
+    <tt>cmake</tt> command.)
+  </li>
+  <li>Furthermore, since generation of output can be very time consuming for jobs
+    with a very large number of MPI processes its highly recommended to
+    <strong>turn off any output generation</strong> by disabling debug writers and
+    any other print/write operations for saving large data to files (vectors and
+    matrices, refined grids, partition maps, solutions ...).
+  </li>
+  <li>Timing measurements are only useful at points where processes are 
+    synchronised, e.g. after computing of global norms, after performing 
+    <tt>pcl::Synchronize()</tt>, <tt>pcl::AllProcsTrue()</tt> ...
+  </li>
+<!-- ?
+  <li>Number of DoFs should be maximal ...
+  </li>
+-->
+  <li>For weak scalability e.g. of \em GMG :
+    Check if the number of iterations is constant over all problem sizes.
+  </li>
+<!--
+  TODO: Infos about how to distribute levels of a multigrid hierarchy
+  <li>Information about how to distribute the levels of a multigrid hierarchy 
+    when executing a multi grid solver (i.e. especially how to avoid too much 
+    work for the root proc).
+  </li>
+-->
+</ul>
+
+
+<hr>
+\section secScalabilityTestsSpecific Specific Information about Scalability Tests
+
+\subsection secHierarchicalRedistribution Hierarchical Redistribution
+
+The approach of (re)distributing the grid to all MPI processes involved in a 
+simulation run in a hierarchical fashion turned out to be essential for a good 
+performance of large jobs (running with >= 1024 PE) on \em JuGene 
+(see \ref secWorking_with_ug4_on_JuGene).
+
+<ul>
+  <li>Example (applicable in a \em LoadLeveler script on \em JuGene):
+    \code
+mpirun -np   1024 -exe ./ugshell -mode VN -mapfile TXYZ -args "<other ug4 args> -numPreRefs 3 -numRefs 10 -hRedistFirstLevel 5 -hRedistStepSize 100 -hRedistNewProcsPerStep  16"
+    \endcode
+     Or (a smaller, not very reasonable one) on \em cekon:
+     \code
+salloc -n 64 mpirun ./ugshell -ex ../apps/scaling_tests/modular_scalability_test.lua -numPreRefs 1 -hRedistFirstLevel 4 -hRedistStepSize 2 -hRedistNewProcsPerStep  4 -numRefs 8
+     \endcode
+  </li>
+  <li>Parameters that control hierarchical redistribution:
+    <ul>
+      <li><tt>-numPreRefs</tt> (as usual):
+        level where the grid is <em>distributed</em> the first time.
+      </li>
+      <li><tt>-numRefs</tt> (as usual):
+        toplevel of the grid hierarchy.
+      </li>
+      <li><tt>-hRedistFirstLevel</tt> (default -1):
+        first level where grid is <em>re</em>distributed (default -1, i.e, 
+        hierarchical redistribution is deactivated).
+      </li>
+      <li><tt>-hRedistStepSize</tt> (default 1):
+        Specifies after how much further refinements the grid will be 
+        redistributed again.
+      </li>
+      <li><tt>-hRedistNewProcsPerStep</tt> (default: 2<sup>dim</sup>):
+        Number of MPI processes ("target procs") in a redistribution step to 
+        which each processor who already has received its part of the grid 
+        redistributes it.
+      </li>
+      <li><tt>-hRedistMaxSteps</tt> (default: 1000000000; not used in the 
+        example above):
+        Limits the number of redistribution steps (to avoid useless 
+        redistributions involving only a few processes at the "end of the 
+        hierarchy").
+      </li>
+    </ul>
+    The following inequality must apply:
+    <tt>numPreRefs < hRedistFirstLevel < numRefs</tt>.
+  </li>
+  <li>Sketch of the algorithm:
+    <ol>
+      <li>At first the (pristine) grid (as defined by the grid file) will be 
+        refined <tt>numPreRef</tt> times => toplevel of the grid hierarchy is 
+        now level <tt>numPreRef</tt>.
+      </li>
+      <li>At this level the grid will be distributed to <tt>k</tt> MPI processes 
+        (<tt>k</tt> will be explained below).
+      </li>
+      <li>Now the grid will be further refined until level 
+        <tt>hRedistFirstLevel</tt> is reached.
+      </li>
+      <li>There the grid will be <em>re</em>distributed to another 
+        <tt>hRedistNumProcsPerStep</tt> MPI processes for every process which 
+        already has received a part of the grid.
+      </li>
+      <li>Then the grid will be refined at most <tt>hRedistStepSize</tt> times:<br>
+        If <tt>numRefs</tt> refinement steps, and also the number of 
+        redistribution steps controlled by <tt>-hRedistMaxSteps</tt> are not yet 
+        reached, go to 4. (else: finished).
+      </li>
+    </ol>
+    Now all MPI processes of the simulation run have their part of the grid.
+    To make things clear:
+    <ul>
+      <li>After <tt>numPreRefs</tt> refinement steps the grid will be 
+        <em>distributed</em>, and
+      </li>
+      <li>after the grid is already distributed to some processes it will be 
+        <em>re</em>distributed
+      </li>
+      <li>at level(s) <tt>hRedistFirstLevel + i * hRedistStepSize</tt><br>
+        (<tt>numPreRefs + hRedistFirstLevel + i * hRedistStepSize < 
+        numRefs</tt>; <tt>0 <= i < hRedistMaxSteps</tt>),<br>
+        until at the end all MPI processes have received a portion of the grid.
+      </li>
+    </ul>
+    So, all parameters with name part <tt>"Redist"</tt> refer to the 
+    redistribution of an already distributed grid.
+  <br>
+    The number of processes <tt>k</tt> of the first distribution step is 
+    determined by the (total) number of MPI processes, <tt>numProcs</tt>, on 
+    one side, and the other redistribution parameters on the other side, 
+    starting "from top" (i.e. top most redistribution level) "to bottom" (first 
+    distribution step):<br>
+    <tt>numProcs / hRedistNumProcsPerStep</tt> is the number of target procs to 
+    which the grid is distributed in the second last redistribution step,<br>
+    <tt>numProcs / hRedistNumProcsPerStep / hRedistNumProcsPerStep</tt> the 
+    number of target procs in the third last redistribution step (or the first 
+    distribution step, if only one redistribution step is performed) etc.
+    <!-- until the first distribution step.-->
+  </li>
+  <li>A test of the paramaters for hierarchical redistribution can be performed 
+    with the LUA script <tt>parameter_test.lua</tt>, e.g.
+    \code
+./ugshell -ex ../apps/scaling_tests/parameter_test.lua -numPreRefs 3 -numRefs 10 -hRedistFirstLevel 5 -hRedistStepSize 100 -hRedistNewProcsPerStep 16 -numProcs 1024
+    \endcode
+     Or the dry run for the smaller job on \em cekon above:
+    \code
+./ugshell -ex ../apps/scaling_tests/parameter_test.lua -numPreRefs 1 -hRedistFirstLevel 4 -hRedistStepSize 2 -hRedistNewProcsPerStep  4 -numRefs 8 -numProcs 64
+    \endcode
+    I.e. since the run is a serial run one has just to specify the number of 
+    MPI processes in addition to the distribution parameters.
+  </li>
+  <li>Please note that this is only a "dry run":
+    The script basically processes the same algorithm 
+    (<tt>ddu.PrintSteps()</tt>) as the one that actually carries out the 
+    (re)distribution (<tt>ddu.RefineAndDistributeDomain()</tt>; cf. 
+    <tt>domain_distribution_util.lua</tt>).
+  </li>
+</ul>
+
+Please note that hierarchical redistribution is not compatible with "grid 
+distribution type" (<tt>distributionType</tt>) <tt>"grid2d"</tt> (see 
+\ref secTopology_aware_mapping_of_mpi_processes).
+In the moment (march 2012) also grid distribution type <tt>"metis"</tt> is 
+unsupported.
+
+See also e.g. <tt>ll_scale_gmg.x</tt> (in <tt>scripts/shell/</tt>) for usage
+examples (specifically to \em JuGene, but also in general).
+
+
+\subsection secTopology_aware_mapping_of_mpi_processes Mapping of MPI processes
+
+"Topology aware mapping" of MPI processes to nodes / cores with respect to the 
+network topology of the parallel machine on which a parallel job is run might 
+be important one day.
+
+<ul>
+<!--
+TODO: Parameters of Mapping of MPI Processes
+-->
+  <li>Parameter <tt>-distType</tt>:
+    Available values: "grid2d", "bisect", "metis" 
+  </li>
+</ul>
+
+
+\subsection secUtilities_for_scalability_tests Utilities for Scalability Tests
+<ul>
+  <li>There exist some LUA scripts specifically tuned for timing measurements 
+    (pathes relavtive to ug4's main directory):
+    <ul>
+      <li>For the Laplace problem:
+        <tt>apps/scaling_tests/modular_scalability_test.lua</tt>.
+      </li>
+      <li>For the Elder problem:
+        <tt>apps/d3f/elder_scalability_test.lua</tt>.
+      </li>
+    </ul>
+  </li>
+  <li>For a (quiet convenient) \b analysis of the profiling results of several 
+    simulation runs there also exist a special <strong>analyzer script</strong>:
+    <tt>scripts/tools/scaling_analyzer.lua</tt>.
+    <ol>
+      <li>To get log files of your simulation runs use the <tt>-ugshell</tt> 
+        parameter <tt>-logtofile</tt>.
+        This is of course not necessary if logfiles are automatically created 
+        by the resource manager (e.g., on \ref secJuGene).
+      </li>
+      <li>In the list variable <tt>inFiles</tt> of the analyzer script enter 
+        the names of the logfiles of all runs which profiling results should be 
+        analysed (edit a local copy).
+      </li>
+      <li>Then execute (with the stand-alone LUA interpreter; see 
+        \ref secInstallLUA for installation if necessary):
+        \code
+lua my_scaling_analyzer.lua
+        \endcode
+        or, redirecting the output to a file :
+        \code
+lua my_scaling_analyzer.lua > jugene_ug4-static_laplace-2d_gmg_weak-scaling_pe4-256k_rev4354.txt
+        \endcode
+        If \c ugshell is executable on the machine used for this analysis
+        (which is \em not the case if you are working on a login node of e.g.
+        \em JuGene), one can also execute
+        <tt>ugshell -ex jugene/scaling_analyzer.lua</tt>
+        (adapt	file pathes in <tt>inFiles</tt> relative to \c ugshell).
+      </li>
+    </ol>
+  </li>
+  <li>See also the <tt>util.printStats(stats)</tt> functionality, e.g. in 
+    <tt>apps/scaling_tests/modular_scalability_test.lua</tt>.
+  </li>
+</ul>
+
+*/

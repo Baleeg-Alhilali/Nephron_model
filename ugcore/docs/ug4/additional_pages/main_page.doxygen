@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2010-2015:  G-CSC, Goethe University Frankfurt
+ * Author: Sebastian Reiter
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+
+// Removed the 'releases page' from the Overview for a lack of meaningful releases:
+// - \subpage pageUG4Releases
+
+
+/** \mainpage ug4 - Documentation 
+ 
+\section secAbout About
+
+\ug4 has been written and is still developed at the <em>Goethe Center for 
+Scientific Computing</em> at the <em>University of Frankfurt, Germany </em> 
+(http://www.g-csc.de).
+
+
+https://github.com/UG4/ugcore gives a quick overview on how to obtain and to install
+\ug4. Several example applications are described and tools for pre- and
+postprocessing are linked.
+
+
+<hr>
+\section secWhatIsIt What is ug4?
+
+\ug4 is a simulation framework, targeted at the solution of
+differential equations on unstructured hybrid grids in 1, 2 and 3 dimensions
+on systems reaching from laptops to massively parallel systems.
+\ug4 is written in C++, striving for a flexible, yet fast and robust simulation 
+environment
+\ref pageUG4Introduction "... [more]"
+
+
+<hr>
+\section secUserManual User Manual
+- Overview
+	- \subpage pageUG4Introduction
+	- \subpage pageUG4Cite
+	- Ideas behind ug4
+	- Software Architecture
+	- Background
+	
+- \subpage pageUG4Setup
+	- \ref pageBuildUG4
+		- \ref pageBashTools
+		- \ref pageUginstall
+	- \ref pageUG4Install
+		- \ref pageUG4OnLinux
+		- \ref pageUG4OnMac
+		- \ref pageUG4OnWindows
+		- \ref pageUG4SetupParallel
+		- \ref pageUG4ParallelCekon, \ref pageUG4ParallelCesari, \ref pageUG4ParallelHermit, \ref pageUG4ParallelJuQueen
+	- \ref pageUG4HLib
+	- \subpage pageCompiling_UG4_for_VRL
+	    - \ref pageUG4SetupUG_VRL
+	    - \ref pageUG4SetupUG_VRL_UnixScript
+
+- \subpage pageUG4Usage
+	- \ref pageUG4Shell
+	- \ref pageTutorials
+		- \ref pageScriptTutorial
+		- \ref pageUG4Profiling
+		- \ref pageUG4ScalabilityTests
+		- \ref pageShellAndLinux	
+	- \ref pageUG4ParallelUsage
+		- \ref pageUG4ParallelComputing
+		- \ref pageugsubmit
+		- \ref pageParallelRendering			
+	- ug4 and vrl
+		- \ref pageUG4SetupUG_VRL
+		- \ref pageUG4SetupUG_VRL_UnixScript
+	- <a href="regdocu/namespaceug4_bridge.html">ug4-Scripting Reference Documentation</a>
+	- \ref pageLuaScript	
+	- \ref pageBashTools
+	- \ref pageLUA2C
+
+- \subpage pageUG4Development
+	- \ref pageUG4CppIntroduction
+	- Central modules of ugbase
+		- \ref pageLAOverview
+		- \ref pageLDIntroduction
+		- \ref pageLGIntroduction
+		- \ref pageUG4Registry
+	- Plugins
+	- \ref pageUnitTests
+	- \ref pageUG4DevTipsGuides
+		- \ref pageInstallEclipse
+		- \ref pageInstallNetbeans
+		- \ref pageUG4CodingStyle
+		- \ref pageTeamCommunication
+		- \ref pageUG4CompilationOptimization
+		- \ref pageUG4DoxygenQuickref
+		- \ref pageUsingGit
+		- \ref pageUG4SSH
+		- \ref pageUG4SVN	
+	- \ref pageDebuggingCPP
+
+- \subpage pageTroubleshooting
+
+- Copyrights and Licenses
+	- \subpage pageCopyrights
+	- \subpage pageExternalLibraries
+ */

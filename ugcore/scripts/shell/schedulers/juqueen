@@ -1,0 +1,114 @@
+######################################################################
+#                            Juqueen
+#-------------------------------------------------------------------
+# http://cizeta.gcsc.uni-frankfurt.de/job/ug-doc/doxygen/page_u_g4_parallel_ju_queen.html
+######################################################################
+
+function UJS_Submit
+{
+	if [ $walltime == "unlimited" ]; then
+		walltime=00:30:00
+	fi
+	
+	if [ $((npe%nppn)) -ne 0 ]; then
+		echo "npe=$npe is not dividable by nppn=$nppn"
+		exit
+	fi
+	echo "Cluster: Juqueen. Scheduler: LoadLeveler (ll)."
+	echo "Create: $outdir/job.sh"
+	
+	if [ $exclusive == true ]; then
+		echo "WARNING: Exclusive not yet supported on this machine."
+	fi	
+	
+	MYLDLPATH=/bgsys/drivers/ppcfloor/comm/lib/
+	
+	cat > job.sh << EOF
+#!/usr/bin/bash
+# @ job_name = $jobname
+# @ comment = $executable $args
+# @ error = job.error
+# @ output = job.output
+# @ environment = COPY_ALL
+# @ wall_clock_limit = $walltime
+# @ group = $(q_cpuquota | grep -Po "Project:[ ]*\K[^ ]+" -m 1 | tr '[:upper:]' '[:lower:]')
+EOF
+
+	JuqueenNotification="never"
+	if [ $mail == true ]; then 
+		if [ -z "$UGSUBMIT_EMAIL" ]; then
+			echo "please set UGSUBMIT_EMAIL or specify email with -email. Aborting."
+			exit
+		fi
+
+		if [ $mailStart == true ]; then
+			JuqueenNotification="start"
+		fi
+		if [ $mailEnd == true ]; then
+			if [ $JuqueenNotification == "never" ]; then
+				JuqueenNotification="complete"
+			else
+				JuqueenNotification="always"
+			fi
+		fi
+		if [ $mailError == true ]; then
+			if [ $JuqueenNotification == "never" ]; then
+				JuqueenNotification="error"
+			else
+				JuqueenNotification="always"
+			fi
+		fi	 
+	fi
+		
+	cat >> job.sh << EOF
+# @ notification = $JuqueenNotification
+# @ notify_user = $UGSUBMIT_EMAIL
+EOF
+
+	cat >> job.sh << EOF
+# @ job_type = bluegene
+# @ bg_connectivity = TORUS
+# @ bg_size = $nnodes
+# @ queue
+$profilePrefix
+runjob --np $npe --ranks-per-node $nppn $runjobarg : $executable $args
+EOF
+
+	commandline="llsubmit job.sh"
+	echo " command:      "$commandline >> info.txt
+
+	if [ $test == true ]; then
+		echo "ONLY testing - NOT executing."
+		echo "Submit/Start: $commandline"
+		return
+	fi
+
+	if [ $interactive == true ]; then
+		echo "Interactive mode currently not supported on juqueen. Aborting."
+		exit
+	else
+		echo "Submit: $commandline"
+	 	commlineoutput=$($commandline)
+	 	echo "$commlineoutput"
+		jobid=$(echo $commlineoutput | sed 's/.*[^0-9]\([0-9]\+\)[^0-9]*$/\1/')
+	fi
+}
+
+function UJS_GetOptions
+{
+	nppnmax=16
+	pemax=262144
+}
+
+
+function UJS_Info
+{	
+	echo "Using llq on Juqueen for user $USER: llq -u $USER -f %id %nh %jn %dd %dq %p %BGCN %st %h"	
+	llq -u $USER -f %id %nh %jn %dd %dq %p %BGCN %st %h
+}
+
+function UJS_Cancel
+{
+	echo "Using llcancel on Juqueen"
+	llcancel $1
+}

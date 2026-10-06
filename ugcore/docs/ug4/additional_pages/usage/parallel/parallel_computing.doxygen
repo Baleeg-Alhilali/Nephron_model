@@ -1,0 +1,266 @@
+/*
+ * Copyright (c) 2012-2014:  G-CSC, Goethe University Frankfurt
+ * Author: Ingo Heppner
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/**	\page pageUG4ParallelComputing Parallel computing
+
+[TOC]
+
+<hr>
+\section secParallelComputingHowto Parallel Computing: Howto
+<hr>
+
+Parallel computing can be done on big clusters (\ref pageUG4SetupParallel), but for beginners, it is easier to do it on
+their own laptop/workstation. Most of the computers nowadays have 2 or even 4 cores, so everyone has the
+possiblity to test parallel code. So basically 4 cores are able to execute 4 threads at once. We're doing our parallelization
+with MPI, so when you've installed OpenMPI or mpich, you can run ugshell's laplace example on 4 cores with
+\code
+mpirun -np 4 ugshell -ex conv_diff/laplace.lua
+\endcode
+Be aware that you can also run this if you don't have 4 cores. This might be handy if you want to check or debug code on 16 threads.
+
+If you have a lot of cores (and sufficient RAM) you can also speed up compiling by using <tt>make -j4</tt>, see \ref secBuildUG4Make.
+
+The recommended way to submit jobs is to use ugsubmit. See here \ref pageugsubmit .
+Using ugsubmit has a lot of advantages: Its more convenient and you will be able to use your scripts on a lot of clusters. 
+ 
+<hr>
+\section secParallelComputingGeneral General Information about Parallel Computing
+<hr>
+
+<ul>
+<li>Perform enough prerefinement steps (typically controlled by LUA script variable <tt>numPreRefs</tt>) that each MPI process gets at least one element of the start grid.</li>
+<li>Start with small problems (but still enough prerefinement steps) </li>
+<li>If you have problems, try to find out the smallest processor/refinement number it occures on.
+</ul>
+
+
+<hr>
+\section secParallelComputingDebuggin Debugging
+<hr>
+
+Parallel debugging can be really complicated. There are some possibilties to do parallel debugging:
+- insert UG_DLOG()s and use (at the beginning of your script)
+\code
+GetLogAssistant():enable_file_output(true, "mylogfile_proc"..GetProcessRank())
+\endcode
+- TotalView, DDT : graphical debuggers. Available on most clusters
+- xprun : xprun is located at ug4/scripts/shell/xprun (just <tt>source ug4/scripts/shell/ugbash</tt>).
+xprun is a small script which opens N xterm terminals, and starts the program you specify in it. So when you go
+\code
+xprun 4 ugshell -ex conv_diff/laplace.lua -outproc -1
+\endcode
+you'll have 4 terminal windows, each representing one core. When you want to do debugging, just add gdb:
+\code
+xprun 4 gdb --args ugshell -ex conv_diff/laplace.lua -outproc -1
+\endcode
+Now you have 4 gdbs running in 4 xterm windows, connected with mpi. See also \ref pageDebuggingCPP, especially the notes on <tt>.gdbinit</tt> .
+
+<hr>
+\section secParallelComputingClusters General Information about Cluster Computing
+<hr>
+Clusters are normally built as follows:
+<ul>
+<li> A small number of <em>login nodes</em> (1 to 32) where you are able to log in and work directly on. Here's where you checking out
+your code from svn, downloading other software, do configuration, setup and compiling. Therefore these nodes are pretty much
+"normal" computers: Typically they have 4-32 cores, decent amount of RAM, fast access to hard drive storage,
+internet connection, a lot of software (if you know how to configure it). Basically everything you'll expect from a workstation.
+</li>
+<li> In contrast to this, there is a large number (96-1,000,000+) of <em>compute nodes</em>. These have a 4-64 cores, and something like 4-64 GB RAM,
+so most have 0.5 or 1 GB RAM per core when you're using all nodes. Note that these nodes <em>do not</em> have hard drives. If they
+want to access hard disc storage, they have to access it <em>throught</em>
+<li> a parallel file system, consisting of a moderate number of i/o nodes (usually much less than compute nodes) and storage.
+</ul>
+
+<hr>
+\section secParallelComputingClustersScaling Scaling
+<hr>
+We distinguish weak scaling and strong scaling.
+<ul>
+<li> \em Weak scaling : Making your problem N times larger and using N times more cores will leave execution time
+more or less constant.
+<li> \em Strong scaling: With the same problem size, N times more cores will make the execution time N times faster.
+</ul>
+Both have their own difficulties if you want to obtain good scaling. For weak scaling, you will need a algorithm which
+has a linear complexity - that can be complicated for some problems.
+For strong scaling, the ratio computation/communication will get worse for big number of cores.
+Unfortunately, you can also get good "scaling" when you have a very slow program, since your communication won't make that
+much of difference then.
+
+
+<hr>
+\section secParallelComputingClustersIO I/O and scaling
+<hr>
+I/O on Clusters is limited because they are optimized for computation, not for huge storage.
+Because of this, you have to keep some things in mind when you want your application to scale.
+- i/o on a cluster can be slower than on your laptop
+- i/o gets REALLY slow if a lot of cores (or all) are accessing the file system. Avoid all-core-i/o.
+- This is not going to change in the next years since some parts of i/o are <em>inherently</em> sequential.
+- especial <b>opening of files is <em>inherently</em> sequential </b>.
+- A job that accesses too much i/o may scale well on 64 nodes but fail to do so on 16k+ cores.
+- this is true for all i/o access, even C or LUA
+- i/o is EVERYTHING file related: open, close, write, read, check existence, scan.
+
+Note that script files are also files that need to be loaded by all cores. These are loaded with ParallelReadFile :
+One core loads the file and broadcasts its contents over the network.
+Logging is also file access. That's why standard setting is outproc = 0. outproc -1 will cause all cores to log.
+This will \em not scale on clusters.
+
+\note When you need to do i/o, think about if you \em really need all cores to do the i/o. If you only need one core to perform a task:
+\code
+if(pcl::ProcRank() == 0) { open file, write file, close file }
+\endcode
+and in LUA
+\code
+if ProcRank() == 0 then
+ -- open file
+ -- write to file
+ -- close file
+end
+\endcode
+
+Remember:
+\note I will again stress out that even just <b>opening files</b> is bad, so make sure also the opening of your files is inside that ProcRank()==0.
+
+There is also a construct to help you with this: instead of io.open, use io.open_ONE("bla.txt", "w", 0). This will open the file only on core 0, all others get
+"dummy" file handles. If you really need to open files on all cores, use io.open_ALL, since io.open will give you a warning if it is called on a core which is not 0.
+
+If you really want to do i/o on all cores (like writing a solution) in C/C++, you can use
+- ParallelReadFile: Read a file on one core and distribute to all (using MPI_Broadcast)
+- WriteCombinedParallelFile and ReadCombinedParallelFile: Write and Read different data for each core (using MPI File I/O).
+
+@sa ParallelReadFile WriteCombinedParallelFile ReadCombinedParallelFile
+
+
+<hr> 
+\section secParallelComputingInputOutput Input and Output
+ 
+ When you're starting a lot of jobs, you can get a problem with your output. When you use ugshell like normal, and output data normally, you might overwrite
+ the output data from one job with the output data of another. That's why, if you are using ugsubmit (\ref pageugsubmit) the job information is stored 
+ in a subdirectory of your current directory (or in a subdirectory of the directory you specified with the ugsubmit option -dir) and it's also executed in that subdirectory.
+ Another solution to this problem is to rename your output files accordingly. Please also note that you want to specify an output directory for your results,
+ see this example:
+\code
+outdir = util.GetParam("-outdir", "", "output directory")
+fileext = discName.."_procs"..GetNumProcesses().."_numRefs"..numRefs
+GetLogAssistant():enable_file_output(true, outdir..filename)
+...
+if GetProcessRank() == 0 then
+	util.writeFileStats(stats, outdir.."stats.txt")
+	WriteGridFunctionToVTK(u, outdir.."Solution")
+	WriteProfileData(outdir..filename..".pdxml")	
+end
+ \endcode
+ \note Think about where you save data and where you get data from. Try if your script is also working from other directories.
+
+
+<hr>
+\section secBashCombination ugsubmit in other scripts
+You can use ugsubmit \em in other scripts. Lets say you have a script myapp/myscript.lua, and you want to run this script with 
+numRefs = 4 .. 8, parameters co2start = {0.1, 0.2, 0.3}, param2 = {-1, 0, 1}, useExtendedModel = {true, false}.
+
+First thing is you have to adjust your script (if not already done) so it takes the input from the command line, e.g.
+\code
+ugshell -ex myapp/myscript.lua -numRefs 4 -co2start 0.2 -param2 1 -useExtendedModel
+\endcode
+
+For this, you use util.HasParamOption, util.GetParam, and util.GetParamNumber, so in your script: 
+\code
+-- beginning of the script
+co2start = util.GetParamNumber("-co2start", 1, "start co2 concentration") --- 1 is default value
+param2 = util.GetParamNumber("-param2", 0, "parameter 2 for the model") --- 0 is default value
+useExtendedModel = util.HasParamOption("-useExtendedModel", "if true, use extended model (nonlinear)") --- false is default value
+
+numRefs = util.GetParamNumber("-numRefs", 4, "number of refinements") 
+
+-- rest of the script
+\endcode
+
+Then you can use a bash named e.g. myLargeRun.sh script like this
+
+\code
+for numRefs in 4 5 6 7 8
+do
+	for co2start in 0.1 0.2 0.3
+	do
+		for param2 in -1 0 1
+		do
+			ugsubmit 64 --- ugshell -ex myapp/myscript.lua -numRefs $numRefs -co2start $co2start -param2 $param2 -useExtendedModel
+			ugsubmit 64 --- ugshell -ex myapp/myscript.lua -numRefs $numRefs -co2start $co2start -param2 $param2
+		done
+	done
+done
+\endcode
+
+Now when you run myLargeRun.sh (bash myLargeRun.sh) the script starts a total of 5*3*3*2 = 60 jobs with ugsubmit.
+
+Note that you can use your myLargeRun.sh also on other clusters! So once set up, you save a lot of work with ugsubmit and bash.
+
+\subsection secParallelOutdirDate A directory for your results
+
+Here's a bash script to create a run directory which is named by the current date so that you can use it with outdir (see \ref secParallelComputingInputOutput) 
+
+\code
+# create a variable with the date e.g. $HOME/results/run_2013-11-05-09.55.26
+myOutDir=$HOME/results/run_`date +%Y-%m-%d-%H.%M.%S``
+mkdir $HOME/results
+mkdir $myOutDir
+for i in {3..6}
+do
+   ugsubmit 64 --- ugshell -ex mycheck.lua -outdir $myOutDir/ -logtofile $myOutDir/mycheck${i} -numRefs $i
+done
+\endcode
+
+\subsection secParallelStats A simple method to produce combined statistics 
+(see also <a href="stats__util_8lua.html">stats_util.lua</a>)
+\code
+-- needs ug_load_script("ug_util.lua")
+if GetProcessRank() == 0 then
+	stats = {	
+	{ "procs", GetNumProcesses() },
+	{ "numRefs", numRefs },
+	{ "param1", param1},
+	{ "dim", dim},
+	{ "gridName", gridName},
+	{ "concentration", integrate_conc( elemDisc_rna_ribo:value(), "rna_ribo_3d" , u, time, false ) },
+	{ "date", os.date("y%Ym%md%d") },
+	{ "SVN Revision", GetSVNRevision()},
+	{"host",GetBuildHostname()},
+	{"commandline", util.GetCommandLine() } } 
+	}
+	
+	util.writeFileStats(stats, outdir.."stats.txt")
+end
+\endcode
+This will produce a file named "stats.txt" in the outdir, where each run can save the values it produced by appending it to the file. At the end you will have a table which is readable by Excel or (Mac) Numbers.
+
+  
+ */

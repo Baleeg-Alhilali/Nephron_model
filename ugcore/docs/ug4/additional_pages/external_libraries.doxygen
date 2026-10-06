@@ -1,0 +1,262 @@
+/*
+ * Copyright (c) 2011-2013:  G-CSC, Goethe University Frankfurt
+ * Author: Sebastian Reiter
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageExternalLibraries External Libraries
+
+\section secOverview Overview
+\ug4 uses some external libraries.
+Some of them are inculded in the \ug4 sources, some have to be downloaded and 
+compiled separately.
+
+Here is a short overview of the libraries included in the sources.
+All those libraries have a license, which allows to use and distribute them 
+even for commercial purposes.
+
+- \ref subLinenoise "linenoise (BSD-like License)"
+- \ref subLua "Lua (BSD-like License)"
+- \ref subMetis "Metis explicitly licensed for use with \ug4"
+- \ref subParMetis "ParMetis explicitly licensed for non-commercial use with \ug4"
+- \ref subLineintersectUtils "lineintersect_utils (custom license)"
+- \ref subRapidXML "RapidXML (Boost Software License - Version 1.0)"
+- \ref subShinyProfiler "Shiny Profiler (zlib/libpng License)"
+- \ref subTribox "tribox (custom license)"
+- \ref subTritri "tritri (CHECK LICENSE)"
+
+Libraries which can be used by \ug4, but are not part of the source-distribution
+due to license restrictions or due to their size are the following:
+<!--
+TODO: Shouldn't Boost be placed in the list above?
+-->
+- boost (Boost Software License)
+- mpi (different licenses)
+- tetgen (free for non-commercial use)
+
+
+<hr>
+\section secLicenses Licenses
+As required by some licenses, the full license text for the respectice libraries
+included in the source distribution is given below.
+Please note that those licenses only apply to the respective libraries.
+
+\subsection subLinenoise Linenoise
+\verbatim
+* Copyright (c) 2010, Salvatore Sanfilippo <antirez at gmail dot com>
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* Redistributions of source code must retain the above copyright notice,
+* this list of conditions and the following disclaimer.
+* 
+* Redistributions in binary form must reproduce the above copyright
+* notice, this list of conditions and the following disclaimer in the
+* documentation and/or other materials provided with the distribution.
+* 
+* Neither the name of Redis nor the names of its contributors may be used
+* to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+\endverbatim
+
+
+\subsection subLua Lua
+\verbatim
+* Copyright (C) 1994-2008 Lua.org, PUC-Rio.  All rights reserved.
+*
+* Permission is hereby granted, free of charge, to any person obtaining
+* a copy of this software and associated documentation files (the
+* "Software"), to deal in the Software without restriction, including
+* without limitation the rights to use, copy, modify, merge, publish,
+* distribute, sublicense, and/or sell copies of the Software, and to
+* permit persons to whom the Software is furnished to do so, subject to
+* the following conditions:
+*
+* The above copyright notice and this permission notice shall be
+* included in all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+\endverbatim
+
+
+\subsection subMetis Metis
+\verbatim
+The METIS package is copyrighted by the Regents of the University of
+Minnesota. It can be freely used for educational and research purposes 
+by non-profit institutions and US government agencies only. Other 
+organizations are allowed to use METIS only for evaluation purposes,
+and any further uses will require prior approval. The software 
+may not be sold or redistributed without prior approval. One may 
+make copies of the software for their use provided that the copies, 
+are not sold or distributed, are used under the same terms and 
+conditions. 
+
+As unestablished research software, this code is provided on an 
+``as is'' basis without warranty of any kind, either expressed or 
+implied. The downloading, or executing any part of this software 
+constitutes an implicit agreement to these terms. These terms and 
+conditions are subject to change at any time without prior notice.
+\endverbatim
+Approval to use and distribute Metis within \ug4 both for educational and commercial
+purposes has been granted.
+
+
+\subsection subParMetis ParMetis
+\verbatim
+The ParMETIS/METIS package is copyrighted by the Regents of the 
+University of Minnesota. It can be freely used for educational and 
+research purposes by non-profit institutions and US government 
+agencies only. Other organizations are allowed to use ParMETIS/METIS 
+only for evaluation purposes, and any further uses will require prior 
+approval. The software may not be sold or redistributed without prior 
+approval. One may make copies of the software for their use provided 
+that the copies, are not sold or distributed, are used under the same 
+terms and conditions.
+
+As unestablished research software, this code is provided on an 
+``as is'' basis without warranty of any kind, either expressed or
+implied. The downloading, or executing any part of this software
+constitutes an implicit agreement to these terms. These terms and
+conditions are subject to change at any time without prior notice.
+\endverbatim
+Approval to use and distribute ParMetis within \ug4 has been granted for
+non-commercial use only. If a license for commercial use is required, one
+may obtain it directly from the University of Minnesota.
+
+
+\subsection subRapidXML	RapidXML
+\verbatim
+Boost Software License - Version 1.0 - August 17th, 2003
+
+Copyright (c) 2006, 2007 Marcin Kalicinski
+
+Permission is hereby granted, free of charge, to any person or organization
+obtaining a copy of the software and accompanying documentation covered by
+this license (the "Software") to use, reproduce, display, distribute,
+execute, and transmit the Software, and to prepare derivative works of the
+Software, and to permit third-parties to whom the Software is furnished to
+do so, all subject to the following:
+
+The copyright notices in the Software and this entire statement, including
+the above license grant, this restriction and the following disclaimer,
+must be included in all copies of the Software, in whole or in part, and
+all derivative works of the Software, unless such copies or derivative
+works are solely in the form of machine-executable object code generated by
+a source language processor.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+\endverbatim
+
+
+\subsection subShinyProfiler Shiny Profiler
+\verbatim
+The zlib/libpng License
+
+Copyright (c) 2007 Aidin Abedi (www.*)
+
+This software is provided 'as-is', without any express or implied warranty. In 
+no event will the authors be held liable for any damages arising from the use 
+of this software.
+
+Permission is granted to anyone to use this software for any purpose, including 
+commercial applications, and to alter it and redistribute it freely, subject to 
+the following restrictions:
+
+  1. The origin of this software must not be misrepresented; you must not claim 
+     that you wrote the original software. If you use this software in a product, 
+     an acknowledgment in the product documentation would be appreciated but is 
+     not required.
+
+  2. Altered source versions must be plainly marked as such, and must not be 
+     misrepresented as being the original software.
+
+  3. This notice may not be removed or altered from any source distribution.
+\endverbatim
+
+
+\subsection subLineintersectUtils lineintersect_utils
+\verbatim
+* Copyright (C) Graham Rhodes, 2001. 
+* All rights reserved worldwide.
+*
+* This software is provided "as is" without express or implied
+* warranties. You may freely copy and compile this source into
+* applications you distribute provided that the copyright text
+* below is included in the resulting source code, for example:
+* "Portions Copyright (C) Graham Rhodes, 2001"
+\endverbatim
+
+
+\subsection subTribox tribox
+\verbatim
+* Copyright (C) Dan Ginsburg, 2000. 
+* All rights reserved worldwide.
+*
+* This software is provided "as is" without express or implied
+* warranties. You may freely copy and compile this source into
+* applications you distribute provided that the copyright text
+* below is included in the resulting source code, for example:
+* "Portions Copyright (C) Dan Ginsburg, 2000"
+\endverbatim
+
+
+\subsection subTritri tritri
+\verbatim
+* Triangle/triangle intersection test routine,
+* by Tomas Moller, 1997.
+* See article "A Fast Triangle-Triangle Intersection Test",
+* Journal of Graphics Tools, 2(2), 1997
+\endverbatim
+*/

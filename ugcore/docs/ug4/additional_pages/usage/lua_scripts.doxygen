@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2012-2015:  G-CSC, Goethe University Frankfurt
+ * Author: Martin Rupp
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageLuaScript Provided LUA Scripts
+
+Here you find documentation about some of the script in ug4/scripts:
+
+- <a href="ug__util_8lua.html">ug util - standard include</a>
+	- <a href="command__line__util_8lua.html"> command line utils</a>
+	- <a href="debug__util_8lua.html.html"> debug utils</a>
+	- <a href="domain__distribution__util_8lua.html"> domain distributation util</a>
+	- <a href="partition__maps_8lua.html">Partition Maps</a>
+	- <a href="time__step__util_8lua.html">Time Steps Util</a>
+	- <a href="domain__disc__util_8lua.html">Domain Disc Util</a>
+	- <a href="stats__util_8lua.html">Stats Utily for tables across runs</a>
+	- <a href="gnuplot_8lua.html">Gnuplot Util</a>
+
+Solvers:
+- <a href="solver__util_8lua.html">Solver Util</a>
+- <a href="setup__famg_8lua.html">FAMG</a>
+- <a href="setup__rsamg_8lua.html">RSAMG</a>
+*/

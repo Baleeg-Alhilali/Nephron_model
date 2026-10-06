@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2012-2015:  G-CSC, Goethe University Frankfurt
+ * Author: Martin Rupp
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+
+/** \page pageBuildUG4 Building UG4
+
+[TOC]
+
+Before building \ug4, you should make sure that you installed all necessary tools (\ref pageUG4Install) 
+for your system. Beginners might also want to have a look at \ref pageShellAndLinux. 
+
+<hr>
+\section secBuildUG4Checkout Checkout ug4
+Please follow the description at https://github.com/UG4/ughub to obtain a copy of UG4.
+
+<hr>
+\section secBuildUG4BashTools Bash Tools
+For some helpful bash tools and completion, use the \ref pageBashTools. 
+If you are new to bash/Linux, please also try the bash prompt covered there.
+
+For installing additional software like cmake, SuperLU, BLAS etc. see \ref pageUginstall.
+
+<hr>
+\section secBuildUG4RunCmake Run CMake
+
+We are using \em CMake to do an out of source build.
+That means that the files created at compile time are in a different directory 
+than the source.
+It is recommended to do the build in subdirectories of `YOURUG4ROOT`.
+Depending on the type of build, you can give them names, most common are 
+`build_release` or `build_debug`, but some also like `debug` or `release`.
+When you are in the directory, you start `cmake [DIR]` where `[DIR]` is the 
+directory where you find the `CMakeLists.txt` which says `project(P_UG4) inside.
+The following example is for a debug build:  
+
+-# Open a terminal/shell window
+-# move to `YOURUG4ROOT`
+-# `mkdir build_debug`
+-# `cd build_debug`
+-# Generate Makefiles:
+   - Linux/MacOS: `cmake ..`
+   - Windows: see \ref pageUG4OnWindows
+   - Clusters: `cmake -DCMAKE_TOOLCHAIN_FILE=<TOOLCHAINFILE> ..` <br>
+     see \ref pageUG4SetupParallel.
+
+Note that there are several options that can be passed to \em CMake to change
+the build behaviour.
+You see always the current chosen setup when runnig `cmake ..` and you should 
+see a list of options which you can change.
+In order to change an option run `cmake` again with the parameter 
+`-D<option>=<val>`, where `<option>` is one of the enumerated options and 
+`<val>` is one of the possible values for that option (`<` and `>` should 
+of course not be typed).
+The last argument to `cmake` always has to be the path which you used when you 
+called cmake the first time.
+
+\note To get more completions for the \ug4 \em CMake parameters, use \em ugcmake.
+
+Note that you only have to specify the variables which you want to change.
+All other variables will keep their values.
+Since in our example we want to do a debug build (hence the name `build_debug`)
+we need to enter `cmake -DDEBUG=ON ..`.
+On the console in `YOURUG4ROOT/build_debug`.
+
+As default ug is build for all supported world dimensions (`Dim = 1,2,3`).
+If you only need a special dimension (e.g. for code development) and you want to 
+save compilation time, use the `-DDIM` option.
+Examples:
+- `cmake -DDIM=ALL ..` -> Builds all dimensions
+- `cmake -DDIM=2 ..` -> Builds only dimension 2
+- `cmake -DDIM="2;3" ..` -> Builds dimension 2 and 3, but not 1
+
+For \em CMake Versions older than 2.8 you may be forced to explicitly specify,
+that the option \c DIM is passed as a string.
+So, please use: `cmake -DDIM:STRING=2 ..` etc.
+
+
+<hr>
+\section secBuildUG4Make Make
+
+-# move to `YOURUG4ROOT/build_debug`
+-# `make`
+
+and your \ug4 is being build.
+Common options for make are
+- `-k`: Don't stop at errors
+- `-jN`: Where `N` is the number of cores.
+  We suggest to use no more than 4 and to keep an eye on memory consumption.
+  There are some files in `ug4/ugbase/bridge` which need more than 1 GB RAM 
+  when being compiled, so you'll get stuck there. 
+- `VERBOSE=1`: Do a "verbose" build, i.e., see what happens in detail
+  (commands executed and their output which otherwise is suppressed).
+
+With redirection of the output into a file, for later analysis, you would have
+e.g. (Bash syntax):
+\verbatim
+make VERBOSE=1 > static-build_make-verbose-output.txt 2>&1 
+\endverbatim
+
+If everything went fine, you can move to `YOURUG4ROOT/bin` and start \ref pageUG4Shell .
+
+*/

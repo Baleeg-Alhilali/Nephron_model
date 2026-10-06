@@ -1,0 +1,80 @@
+# Copyright (c) 2013:  G-CSC, Goethe University Frankfurt
+# Author: Torbjörn Klatt
+# 
+# This file is part of UG4.
+# 
+# UG4 is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License version 3 (as published by the
+# Free Software Foundation) with the following additional attribution
+# requirements (according to LGPL/GPL v3 §7):
+# 
+# (1) The following notice must be displayed in the Appropriate Legal Notices
+# of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+# 
+# (2) The following notice must be displayed at a prominent place in the
+# terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+# 
+# (3) The following bibliography is recommended for citation and must be
+# preserved in all covered files:
+# "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+#   parallel geometric multigrid solver on hierarchically distributed grids.
+#   Computing and visualization in science 16, 4 (2013), 151-164"
+# "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+#   flexible software system for simulating pde based models on high performance
+#   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+
+@INCLUDE               = doxy_config_ug4.txt
+@INCLUDE               = doxy_config_ug4_mathjax.txt
+
+# overwriting configs from INCLUDE
+PROJECT_NAME           = "Registry"
+OUTPUT_DIRECTORY       = regdocu
+ALWAYS_DETAILED_SEC    = NO
+INLINE_INHERITED_MEMB  = YES
+STRICT_PROTO_MATCHING  = NO
+GENERATE_TODOLIST      = NO
+GENERATE_TESTLIST      = NO
+GENERATE_BUGLIST       = NO
+GENERATE_DEPRECATEDLIST= YES
+SHOW_USED_FILES        = NO
+SHOW_FILES             = NO
+SHOW_NAMESPACES        = NO
+HIDE_SCOPE_NAMES       = YES
+INPUT                  = regdocu
+FILE_PATTERNS          = *.cpp *.doxygen
+EXCLUDE                =
+LAYOUT_FILE            = Layout_regdocu.xml
+SOURCE_BROWSER         = NO
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+REFERENCES_LINK_SOURCE = YES
+USE_HTAGS              = NO
+VERBATIM_HEADERS       = NO
+
+# The TAGFILES option can be used to specify one or more tagfiles. For each
+# tag file the location of the external documentation should be added. The
+# format of a tag file without this location is as follows:
+#
+# TAGFILES = file1 file2 ...
+# Adding location for the tag files is done as follows:
+#
+# TAGFILES = file1=loc1 "file2 = loc2" ...
+# where "loc1" and "loc2" can be relative or absolute paths
+# or URLs. Note that each tag file must have a unique name (where the name does
+# NOT include the path). If a tag file is not located in the directory in which
+# doxygen is run, you must also specify the path to the tagfile here.
+
+TAGFILES               = ugbase.tags=.. \
+                         plugins.tags=../plugins
+
+# When a file name is specified after GENERATE_TAGFILE, doxygen will create
+# a tag file that is based on the input files it reads.
+
+GENERATE_TAGFILE       = regdocu.tags

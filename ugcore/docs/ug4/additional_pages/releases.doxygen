@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) 2012:  G-CSC, Goethe University Frankfurt
+ * Author: Sebastian Reiter
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4Releases Releases
+
+\ug4 is currently under active development. Below you'll find a list of
+the latest releases together with a short description of the main features of
+each release.
+
+<br>
+<hr>
+\section secUG4_0_1	ug4.0.1
+- Major changes
+	- The plugin build system has been reworked. Plugins can now be registered
+	  through a simple cmake-function call. They can then be enabled or disabled
+	  through cmake. Enabled plugins are automatically build alongside with ug4,
+	  which completely removes possible build option mismatches between ug4 and its plugins.
+
+	  The new system makes it also possible to include registered plugins in
+	  static builds of ug4.
+
+	  The old plugin build system is still available, however not recommended,
+	  since unregistered plugins can not be included in static builds.
+
+
+<br>
+<hr>
+\section secUG4_0_0	ug4.0.0
+ug4.0.0 is the first release of the \ug4 simulation environment. While this version does not
+yet contain all of the planned features of \ug4, it already provides a rich
+simulation , which is used in many different projects.
+
+Below you'll find a list which tries to summarize the current state of ug4.
+Note that this list is far from complete.
+
+- General
+	- \ug4 is a cross platform simulation environment, running on Linux, Mac-OSX
+	  and Microsoft Windows. More platforms may well be supported but have not yet
+	  been tested.
+	- \ug4 runs on laptops as well as on large scale parallel clusters. Scalability
+	  of the provided geometric multigrid solver has been shown for up to
+	  262144 (256ki) processes. It may well show a good scaling behavior
+	  for even more processes.
+	- \ug4 has been carefully crafted to allow the execution of applications both
+	  in serial and in parallel environments. No changes to the scripts are required,
+	  since parallelization is handled internally.
+	- \ug4 not only provides a flexible scripting environment throug the use of
+	  the lua scripting language, it also provides bindings to java and the
+	  "Visual Programming Languge" vrl. The latter allows to build a simulation
+	  while at the same time building its graphical user interface through simple
+	  drag and drop operations.
+	- \ug4 provides an interactive shell with auto-completion, method-inspection,
+	  script-debugging utilities and much more.
+	- Comprehensive error messages with call-stacks allow to quickly understand
+	  what went wrong in a script and where it did so.
+	- \ug4 is extendible through plugins. Classes and algorithms developed in
+	  such plugins are immediately available in ug-script and the vrl.
+	- Methods of different plugins can easily be combined on the scripting level.
+	- The sources of ug4 are structured in a modular way, with the main sub-libraries
+	  libAlgebra, libDisc (discretization) and libGrid. More libraries like the
+	  "parallel communication layer" support those main libraries.
+	- Profiling is available to all applications through the use of the Shiny profiler.
+	- A comprehensive math library for vector calculations in 1, 2 and 3 dimensions
+	  (ray-triangle, ray-box, ... intersections, etc).
+	- A unit-testing framework allows to monitor the effect of recent changes and
+	  guarantees a stable code-base.
+
+- <b>libAlgebra</b>
+	- Template based implementation, which allows to use highly specialized
+	  matrix structures.
+	- Efficient sparse matrix support for arbitrary block types.
+	- Dense matrix types for small block-matrices.
+	- Efficient linear serial and parallel solvers, like 'bicgstab', 'cg',
+	  'feti', 'gauss-seidel', 'ilu', 'jacobi' and 'lu-decomposition'.
+	- Algebraic Multigrid methods: An abstract parallel algebraic multigrid framework including
+	  calculation of matrix overlaps, several parallel coarsening algorithms, agglomeration of
+	  processors, and a lot of debugging mechanisms for checking at each AMG level:
+	  where error is not corrected, what matrix is produced (including graphical output).
+	  On implementations we have a Ruge-Stueben AMG, and a Filtering AMG (in development).
+	- a PINVIT/LOBPCG eigensolver (in development).
+	- Tools and utilities to inspect large matrices.
+	- Operators and structures are registered at ug's registry and are thus
+	  available both in ug-script and in the vrl.
+
+
+- <b>libDisc</b>
+	- Highly flexible discretization library, which provides modular
+	  discretization building blocks.
+	- Data imports and exports allow the efficient and flexible coupling
+	  of different discretization building blocks with each other and with
+	  user provided callback functions.
+	- Support for different algebra implementations through the use of template
+	  programming.
+	- Prebuild discretization blocks: ...
+	- Efficient and scalable geometric multigrid methods for serial and parallel
+	  use. Adaptivity through hanging-nodes is fully supported both in serial
+	  and parallel environments.
+	- Fully scriptable through ug-script or vrl-projects.
+
+- <b>libGrid</b>
+	- Unstructured hybrid hierarchical grids in 1, 2 and 3 dimensions.
+	- Separation of topology and data allows to associate arbitrary data with
+	  elements in the grid - even temporary data may be attached. Data access is
+	  typesafe and fast. Management of arbitrary data associated with the elements of
+	  a grid is fully automated.
+	- Grids may consist of vertices, edges, faces and volumes. Currently used
+	  concrete element-types include vertices, edges, triangles, quadrilaterals,
+	  tetrahedrons, pyramids, prisms and hexahedrons.
+	- New grid-element types can easily be added by a user, without the need to
+	  change any library related code.
+	- A large set of algorithms operating on grids and related classes. Those
+	  algorithms include refinement-, extrusion-, graph- and remeshing- algorithms.
+	- Adaptive refinement using hanging nodes or regular closure is supported.
+	- Adaptive parallel multigrid hierarchies using hanging nodes are available.
+	- Grids may be distributed to an arbitrary amount of processes using
+	  user-defined partition maps.
+	- Redistribution and hierarchical redistribution are supported, which allow
+	  efficient use of parallel multigrid solvers on large parallel clusters (>100000 procs)
+	- Associated software like ProMesh provides tools to create custom grids
+	  ready for simulation.
+
+- Other libraries
+	- <b>common</b>: Contains many different utility classes and functions used e.g. for
+	  logging, smart-pointers, serialization, basic math, parsers and profilers and much more.
+	- <b>pcl</b> ("Parallel Communication Layer"): MPI-Based communication for distributed
+	  memory architectures. Template based structures allow to define process interfaces
+	  and layouts, which can be used to communicate data. To minimize buffering
+	  overhead, so called CommunicationPolicies are used. The library introduces
+	  minimal overhead and can be used for many different applications, due to
+	  its template implementation. Currently used by libGrid to distribute grids
+	  and to communicate on distributed grids, e.g. during refinement.
+	  Also used by libAlgebra to perform necessary communication during matrix- /
+	  vector-operations and for the implementation of the parallel amg methods.
+	  The pcl internally identifies objects through there positions in associated
+	  interfaces and does thus not rely on global id's. If required by a user,
+	  global id's can however be efficiently generated.
+	- <b>registry</b>: Classes and functions can be registered at the registry through a
+	  convenient interface. Function arguments are automatically recognized and
+	  are treated in a type-safe way. The registry supports const correctness,
+	  multiple inheritance, virtual functions, pass-by-reference as well as
+	  raw- and smart-pointer arguments. This means that you can register nearly
+	  arbitrary C++ classes and functions.
+	  The registry can be queried by different bindings for registered classes
+	  and functions. Currently bindings exist, which expose all registered
+	  functionality in a coherent way to the lua scripting language and to
+	  java / vrl.
+
+- Plugins and applications
+	- Many different plugins are currently in development. Those plugins are
+	  currently in an experimental state. The plugins enhance ug through
+	  ug's registry. They register new discretization modules or other algorithms,
+	  which can then be executed by any ug script.
+	- Plugins currently in development: level_set, membrane_potential_mapping,
+	  navier_stokes, neuron, nonlinear_elasticity, tkd_generator, voltage_gated_channels.
+	- Applications are collections of scripts and geometries. Many of them use
+	  methods and structures of associated plugins. Here are some applications
+	  which are currently under development: adaptive_mg, amg, conv_diff, d3f,
+	  eigenvalue, finite_differences, level_set, membrane, navier_stokes,
+	  neuro_muscular_junction, neuron, nonlinear_elasticity, pcl_sample,
+	  scaling_tests, skin, synaptic_cleft, triggered_calcium_diffusion, tutorials,
+	  ugdocu, vol_util.
+	  Note that some of those applications may not be in a usable state.
+ */

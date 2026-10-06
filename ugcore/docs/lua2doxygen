@@ -1,0 +1,264 @@
+#!/usr/bin/env perl
+# this code is based on code from Alec Chen
+# changed by Martin Rupp. More copyright information follows.
+
+
+#use strict;
+use warnings;
+use File::Basename;
+#package bla;
+$input = $ARGV[0];
+
+$bInBlock = 0;
+$bInFunction = 0;
+$blockName = q{};
+$result = q{};
+$luaDoxygenMark = "--!";
+$inMultilineComment = 0;
+$inDocuMultilineComment = 0;
+$functionComment = "";
+$code="";
+$fromline = 0;
+
+
+local $/=undef; #Unset $/, the Input Record Separator, to make <> give you the whole file at once.
+open FH, "<$input"  or die "Can't open $input for reading: $!";
+
+$doc = <FH>;
+@document = split( /\n/, $doc);
+#print(document);
+
+sub trim($)
+{
+	my $string = shift;
+	$string =~ s/^\s+//;
+	$string =~ s/\s+$//;
+	return $string;
+}
+
+sub writeFunction()
+{
+	$bInFunction = 0;
+	$result .= "location: ".dirname($input)." / ".basename($input)." :$fromline-$i\n";
+	if($i-$fromline < 20)
+	{
+		$result .= "$resultcode$line\n\\endcode\n";
+	}
+	# $result .= "**/\n";
+	$result .= "**/\n".$functionLine."\n";
+}
+
+for ($i=0;$i<=$#document;$i++)
+{
+  $line = $document[$i];
+	chomp $line;
+    $originalLine=$line;
+
+    
+    if ($inDocuMultilineComment == 1 or $inMultilineComment == 1)
+    {
+    	if ( $line =~ /\]\]--/ )
+    	{
+    		$inMultilineComment=0;
+    		$inDocuMultilineComment=0;    		
+    	}
+    	elsif ( $inDocuMultilineComment == 1 )
+    	{
+    		# remove additional --
+    		$line =~ s/^--//;
+    		$functionComment .= $line ."\n";
+    	}
+    	next;
+    }
+    
+    if ($originalLine =~ /--\[\[!/)
+    {
+    	$inDocuMultilineComment=1;
+		# $line =~ s/^--\[\[!//;
+		# $functionComment .= $line ."\n";
+    	next;
+    }
+    elsif ($line =~ /--\[\[/)
+    {
+      	$inMultilineComment=1;
+    	next;
+    }
+    
+    # skip normal comments
+    next if $line =~ /^\s*--[^!]/;
+    
+    # remove end of line comments
+    $line =~ s/--[^!].*//;
+    
+    # skip comparison??
+    #next if $line =~ /==/;
+    
+    # translate to doxygen mark
+    $line =~ s{$luaDoxygenMark}{///};
+
+    if ($line =~ m{^\s*///(.*)}) 
+    {    
+        $functionComment .= "$1\n";        
+        next;
+    }
+    
+    $code .= $originalLine . "\n";
+    
+    # function start
+    if ( $line =~ /^\s*function[ \t]/) 
+    {
+        $bInFunction = 1;
+		$functionLine = "";
+		while( $line !~ m/[\)]*\)/ )
+		  {
+			$functionLine .= trim($line);
+			$functionLine .= "\n";
+			$i++;
+			$line = $document[$i];
+			$line =~ s/--[^!].*//;
+		  }
+		$functionLine .= trim($line);
+
+		$functionLine =~ s/:/-/;
+        $functionLine .= q{;};
+
+        $result .= "\n/**\n";
+        if($functionComment ne "")
+        {
+        	$result .= $functionComment."\n";
+        }		
+        $resultcode = "\\code\n".$originalLine."\n";
+        $functionComment = "";
+		$fromline = $i;
+
+		if ( $line =~ /^.*end/ )
+		{
+		# This code tries to avoid problems with non-closed comments for one-liner functions.
+		# Not that it is not really safe (as the rest of the script seems to be),
+		# since opening and closed blocks are not counted. It would e.g. fail for:
+		# 	function a (b) if(b) print("c") end
+		# 	end
+		# Nevertheless it helps to parse most scripts.
+			$bInFunction = 0;
+			$result .= "location: ".dirname($input)." / ".basename($input)." :$fromline\n";
+			$result .= "\\code\n".$originalLine."\n\\endcode\n**/\n";
+			$result .= $functionLine."\n";
+        }
+
+        next
+    }
+    elsif ( $line =~ /^\s*(\w*)\s+=\s+function\s*\(([^\)]*)/ ) 
+    {
+        $bInFunction = 1;
+        $line = "function $1($2);";
+        $line =~ s/:/-/;
+        $functionLine = $line;
+        $result .= "\n/**\n";
+        if($functionComment ne "")
+        {
+        	$result .= $functionComment."\n";
+        }
+        $resultcode = "\\code\n".$originalLine."\n\n";
+        $functionComment = "";
+		$fromline = $i;
+
+        next
+    }
+        
+    # function end
+    if ($bInFunction == 1) 
+    {
+    	if ( $line =~ /^end/ )
+     	{
+			writeFunction()
+        }
+        else
+        {
+        	$resultcode .= $originalLine . "\n";
+        }
+    }
+    
+    # block start
+    elsif ($bInFunction == 0 && $line =~ /^(\S+)\s*=\s*{/ && $line !~ /}/) 
+    {
+        $blockName = $1; 
+        $bInBlock = 1;
+    }
+    
+    # block end
+    elsif ($bInFunction == 0 && $bInBlock == 1 && $line =~ /^\s*}/) 
+    {
+        $blockName = q{};
+        $bInBlock = 0;
+    }
+    
+    elsif ($line =~ /.*util.GetParam(Number|)\s*\(\"-(\w*)\"\s*(.*)/ )
+    {
+	if ($1 eq "Number")
+    	{ $result .= "parameterNumber ".$2; }
+    	else { $result .= "parameterString ".$2; }
+    	if ($3 =~ /^,\s*(\"[^\"]*\")\s*(.*)/ or $3 =~ /^,\s*(\w*)(.*)/)
+    	{ 	
+    		$result .= " = ".$1.";";
+    		# description
+    		if ( $2 =~ /^,\s*\"([^\"]*)/ )
+    		{
+		    $result .= " //!< $1" ;	
+		}
+    	}
+	else
+	{
+	    $result .= ";";
+	}
+	if($functionComment ne "")
+	{
+	    $result.= "\n/*!< ".$functionComment."**/";
+
+			$functionComment = "";
+	}
+
+	$result .= "\n";
+    }   
+    elsif ($line =~ /.*util.HasParamOption\s*\(\"-(\w*)\"\s*(.*)/ )
+    {
+    	$result .= "parameterBool ".$1;
+   		# description
+   		if ( $2 =~ /^,\s*\"([^\"]*)/ )
+   		{
+   			$result .= "; ///< ".$1.";\n";    		
+    	}
+    	else { 	$result .= ";\n";	}
+    }     
+        
+    # variables
+    # we don't want variables
+    # elsif ($bInFunction == 0 && $line =~ /=/) {
+    #     $line =~ s/(?=\S)/$blockName./ if $blockName;
+    #     $line =~ s{,?(\s*)(?=///|$)}{;$1};
+    #     $result .= "$line\n";
+    # }
+
+    if($functionComment ne "")
+    {
+    	$result.="/**\n".$functionComment."\n**/\n\n";
+    	$functionComment = "";
+    }
+    
+}
+
+# function end
+if ($bInFunction == 1) 
+{
+	writeFunction()
+}
+if($functionComment ne "")
+{
+	$result.="/**\n".$functionComment."\n**/\n\n";
+	$functionComment = "";
+}
+
+    
+close FH;
+$result .= "\n/** <hr> \\include $input */\n";
+#print("/**\n\\file $input\n\\brief my superfile\n\\code\n".$code."\n\\endcode\n**/\n");
+print($result);

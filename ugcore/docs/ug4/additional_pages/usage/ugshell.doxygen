@@ -1,0 +1,294 @@
+/*
+ * Copyright (c) 2011-2013:  G-CSC, Goethe University Frankfurt
+ * Author: Martin Rupp
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4Shell ugshell
+
+[TOC]
+
+For any questions, contact martin.rupp\@gcsc.uni-frankfurt.de.
+
+
+<hr>
+\section secCommandLineOption Command-Line Options
+
+\em ugshell has the following build-in command-line options:
+- <tt>-outproc id</tt> &mdash; Sets the output-proc to id. Default is 0.
+- <tt>-ex scriptname</tt> &mdash; Executes the specified script.
+- <tt>-noquit</tt> &mdash; Does run the interactive shell after specified 
+  script.
+- <tt>-noterm</tt> &mdash; Terminal logging will be disabled.
+- <tt>-logtofile filename</tt> &mdash; Output will be written to the specified
+  file.
+  
+\note There is bash completion available for ugshell, see \ref pageBashTools.  
+
+Script files are written in LUA, see \ref pageScriptTutorial for an introduction.
+
+You can also use the command line to pass arguments to your scripts:
+\verbatim
+./ugshell -ex tutorials/tut02_loading_a_domain.lua -grid unit_square/unit_square_quads_2x2.ugx  
+\endverbatim
+
+You can access command line parameters by using the lua function from 
+<a href="ug__util_8lua.html">util.lua</a>:
+\code
+function util.GetParam(name, return_if_unavailable)
+\endcode
+For that, you have to include the <tt>ug_util.lua</tt> file using 
+<tt>ug_load_script("ug_util.lua")</tt>.
+
+
+ug_load_script will search for files in the following directories (in that order)
+- relative to current script
+- as absolute filename
+- in the scripts path
+- in the apps path
+- in the ug4 path.
+\note ug_load_script will load files parallel, so you have to be sure that all processes are calling ug_load_script. if you want to load a different file or files only on some cores, you can use ug_load_script_single.
+
+Example:
+\code
+ug_load_script("ug_util.lua")
+gridName = util.GetParam("-grid", "unit_square/unit_square_quads_8x8.ugx")
+\endcode
+You can find out more about provided scripts in \ref pageLuaScript.
+
+If there is no commandline argument <tt>"-grid"</tt>, then the second argument 
+is returned by <tt>util.GetParam</tt>.
+Otherwise, the argument after <tt>"-grid"</tt> in the commandline is returned.
+Notice that omitted parameters to Lua-functions are treated as <tt>nil</tt>, so 
+<tt>util.GetParam("-grid")</tt> is the same as 
+<tt>util.GetParam("-grid", nil)</tt>.
+If you want your argument to be casted to a number, use 
+<tt>util.GetParamNumber</tt>:
+\code
+function util.GetParamNumber(name, return_if_unavailable)
+\endcode
+If the argument is not a number, the second argument is returned. 
+To check if an option is in the command line, use <tt>util.HasParamOption</tt>:
+\code
+function util.HasParamOption(name)
+\endcode
+
+Examples:
+\code
+dim = util.GetParamNumber("-dim", 2)
+useAggressiveCoarsening = util.HasParamOption("-AC")
+\endcode
+
+You can abort the execution of \ug4 out of Lua scripts by using 
+<tt>exit()</tt>.
+If you want to stop the execution of a script at a specific place, but you want 
+to use the interactive shell thereafter, insert at that place a call like 
+<tt>error("break")</tt> (or whatever message sounds reasonable to you) and 
+start the run with the <tt>-noquit</tt>. option
+
+
+<hr>
+\section secInteractiveShell Interactive Shell
+
+When starting \em ugshell without arguments, you get the following output:
+\verbatim
+ug:> 
+\endverbatim
+and a blinking cursor:
+This is called the <em>interactive shell</em>.
+Interactive shell is disabled when you use \c -ex without \c -noquit and if 
+\ug4 is running in parallel.
+
+In the interactive shell you can do everything just like in a .lua file, for example: 
+<tt>&lt;scriptname&gt;</tt> (as usual) by executing <tt>ug_load_script()</tt>:
+\verbatim
+ug:> ug_load_script(<scriptname>)
+\endverbatim
+
+\subsection secAutoCompletion Auto Completion
+
+The interactive \em ugshell has some auto-completion features implemented.
+When you enter a part of something and hit \em tab \em ugshell tries to 
+auto-complete your input.
+If there is not a unique completion, and you hit \em tab again, you get a list 
+of possible completions.
+
+<ul>
+  <li>Path Completion:<br>
+    <tt>"../scr"</tt> -> <tt>"../scripts/"</tt><br>
+    (only tried if the word left from the cursor starts with a ")
+  </li>
+  <li>Member Function Completion:<br>
+    <tt>mainProfileNode:cal</tt> -> <tt>mainProfileNode:call_tree</tt><br>
+    (only tried if there is a : in the word)
+  </li>
+  <li>Table/"Namespace" Completion:<br>
+    <tt>math.e</tt> -> <tt>math.exp</tt>
+  </li>
+  <li>Completion of Lua globals, internal functions and modules (like \em math, 
+    \em io, \em string), classes and global functions from the 
+    <em>ug4-registry</em>, and functions defined in Lua script.
+  </li>
+</ul>
+
+
+<hr>
+\section secRuntimeInformation Runtime Information
+
+You can get Information about the current state of Lua by the following methods:
+<ul>
+  <li>\code
+void TypeInfo(const char *typename)
+    \endcode
+    \c TypeInfo prints all information available for the data you insert.
+    Note that you have to enclose your type name with <tt>"</tt>.
+    Example: <tt>TypeInfo("Grid")</tt>.
+    \c TypeInfo works with
+    <ul>
+      <li>tables, and prints their content recursively</li>
+      <li>all other basic lua types: numbers, strings, ...</li>
+      <li>lua script functions, and prints their code</li>
+      <li>classes, global functions and member function from the ug4-registry</li>
+    </ul>
+    <li>
+    In interactive shell, the use of \c TypeInfo can be abbreviated by using
+    \verbatim
+ug:> Grid?
+    \endverbatim
+    and hitting enter.
+    When the name left to the cursor is unambiguous, hitting tab three times 
+    also displays information about the object. 
+    Functions show their parameters when you enter the function and the first 
+    bracket
+    \verbatim
+ug:> GetProfileNode(
+    \endverbatim
+    and hit tab.
+  </li>
+  <li>\code
+void ClassUsage(const char *typename)
+    \endcode
+    \c ClassUsage prints the usage of the class, that is:
+    <ul>
+      <li>Functions returning an instantiation of the class</li>
+      <li>Functions which require one argument to be of the type of the class 
+        or of a base class
+      </li>
+      <li>Instatiations in Lua which have the type class or a subclass of the 
+        class.
+      </li>
+    </ul>
+
+    Example (excerpt):
+    \verbatim
+ug:> ClassUsage("Domain2d")
+
+--- Functions returning Domain2d: ---
+ Domain2d* IApproximationSpace2d:domain()
+--- Functions using Domain2d: ---
+ bool Domain2d:LoadDomain (Domain2d* Domain, string Filename, integer Number Refinements)
+ bool Domain2d:DistributeDomain (Domain2d* )
+ IRefiner* Domain2d:GlobalDomainRefiner (Domain2d* )
+ Domain2d:TestDomainInterfaces (Domain2d* )
+ IApproximationSpace2d:assign_domain ([Domain2d* ])
+ DirichletBND2d:set_domain ([Domain2d* ])
+
+Instantiations of Class Domain2d:
+dom        (Domain2d)
+    \endverbatim
+  </li>
+  <li> Listing
+  <ul>
+  <li> <tt>list_luaObjects()</tt> : Lists all Objects created by lua or in lua scripts.
+  <li> <tt>list_cfunctions()</tt> : Lists all <a href="http://cave1.gcsc.uni-frankfurt.de/job/ug-bridge-doc/javadoc/functions.html">global functions</a>
+   provided by the current registry.
+  <li> <tt>list_classes()</tt> : Lists all <a href="http://cave1.gcsc.uni-frankfurt.de/job/ug-bridge-doc/javadoc/index.html">Classes</a> provided by the current registry.
+  <li> <tt>list_scriptFunctions()</tt> : Lists all LUA functions provided by you or loaded scripts.
+  <li> <tt>list_internalFunctions()</tt> : Lists all functions (these are also internal registry or lua functions).
+  <li> <tt>ls()</tt> lists all of the above.
+</ul>
+
+
+<hr>
+\section secDebugging Debug Shell
+
+You can also debug your Lua Script using the shell.
+For this, you can use the script functions
+<ul>
+  <li>\verbatim
+breakpoint()
+    \endverbatim
+    <tt>breakpoint()</tt> breaks the execution of the script at exactly the 
+    location it stands.
+    This is the preferred method of setting a breakpoint.
+  </li>
+  <li>\verbatim
+breakpoint(source, line)
+    \endverbatim
+    <tt>breakpoint("laplace.lua", 69)</tt> adds a breakpoint at the file 
+    <tt>"laplace.lua"</tt> (path relative to current script).
+    <tt>print_breakpoints</tt> prints those.
+    Note that only lines with code are "catched" by the compiler.
+  </li>
+</ul>
+
+When your breakpoint is reached, you are entering the \ug4 <em>debug shell</em>:
+\verbatim
+./../scripts/laplace.lua:69 breakpoint()
+debug:> 
+\endverbatim
+
+The debug shell is like the normal ugshell (so it has \ref secAutoCompletion 
+and \ref secRuntimeInformation), but you have some extra commands.
+Most of them have a similar function as in \em gdb:
+- <tt>continue, cont</tt> &mdash; Continues execution.
+- <tt>step</tt> &mdash; Continues execution until the next line is reached, 
+  steps into subroutines.
+- <tt>next</tt> &mdash; Continues execution until the next line is reached, 
+  does not step into subroutines (that is, we are skipping lines with greater 
+  function stack depth).
+- <tt>finish</tt> &mdash; Finishes subroutines/scripts (continues execution 
+  until a line is reached with lower function stack depth).
+- <tt>list</tt> &mdash; Lists the script surrounding the current statement.
+- <tt>backtrace, bt</tt> &mdash; Prints the function stack.
+- <tt>up, down</tt> &mdash; Goes up and down the function stack.
+- <tt>quit, exit</tt> &mdash; Like in normal shell, exits ug4 directly.
+- <tt>print VAL</tt> &mdash; Like <tt>VAL?</tt>
+
+Note that you don't have to configure \ug4 with <tt>cmake -DDEBUG=ON ..</tt>) 
+to use the debug shell. 
+There is a small performance drawback when using 
+<tt>breakpoint(source, line)</tt> because we have to check for every line if it 
+is a break line. 
+This is especially the case if you have lots of small calls in your Lua script.
+However, there is no performance drawback in <tt>breakpoint()</tt>.
+
+
+
+*/

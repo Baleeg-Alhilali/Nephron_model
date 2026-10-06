@@ -1,0 +1,200 @@
+#!/bin/bash
+######################################################################
+# uginstall_config
+#-------------------------------------------------------------------
+# created by Martin Rupp 31.05.2012
+# mail: martin.rupp@gcsc.uni-frankfurt.de
+######################################################################
+# This file sets all environment variables for software installed with uginstall
+# these are
+#
+# --- flags for compiling ---
+# C_INCLUDE_PATH	 	additional path used by gcc/g++ when searching for includes (headers)
+#						used for including headers from libraries
+# CPLUS_INCLUDE_PATH	C++ version
+#		
+# --- flags for linking ---
+# LIBRARY_PATH 			is used by gcc before compilation to search for directories
+#              			containing libraries that need to be linked to your program.
+# LD_LIBRARY_PATH 		is used by your program to search for directories containing 
+#                 		the libraries after it has been successfully compiled and linked
+# LDFLAGS 				additional flags used for linking
+#
+# --- flags for dynamic linking ---
+# DYLD_LIBRARY_PATH		path where to search for dynamic libraries
+# LD_RUN_PATH
+#
+# --- flags for launching binaries in the shell ---
+# PATH					PATH for where to search for binaries. used when installing programs
+#                   	like doxygen so that they are accessible from everywhere
+#
+# without this file, uginstall won't work!
+
+scriptname=${BASH_SOURCE:-$0};		  # name of script
+scriptpath=`dirname $scriptname`
+
+source $scriptpath/uginstall_path
+
+
+####################################################################################
+add_lib()
+{
+	lib=$1
+	if [ -e $lib ]; then
+		if [ -z $LIBRARY_PATH ]; then
+			LIBRARY_PATH=$lib
+		else
+			echo $LIBRARY_PATH | grep -q $lib
+			if [ $? -ne 0 ] ; then
+				LIBRARY_PATH=$LIBRARY_PATH:$lib
+			fi
+		fi
+	
+		if [ -z $LD_LIBRARY_PATH ]; then
+			LD_LIBRARY_PATH=$lib
+		else
+			echo $LD_LIBRARY_PATH | grep -q $lib
+			if [ $? -ne 0 ] ; then
+				LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$lib
+			fi
+		fi
+	
+		if [ -z $LD_RUN_PATH ]; then
+			LD_RUN_PATH=$lib
+		else
+			echo $LD_RUN_PATH | grep -q $lib
+			if [ $? -ne 0 ] ; then
+				LD_RUN_PATH=$LD_RUN_PATH:$lib
+			fi
+		fi
+		
+		if [ -z $DYLD_LIBRARY_PATH ]; then
+			DYLD_LIBRARY_PATH=$lib
+		else
+			echo $DYLD_LIBRARY_PATH | grep -q $lib
+			if [ $? -ne 0 ] ; then
+				DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$lib
+			fi
+		fi
+	
+		echo $LDFLAGS | grep -q $lib
+		if [ $? -ne 0 ] ; then
+			LDFLAGS="-L$lib $LDFLAGS"
+		fi
+	fi
+}
+
+####################################################################################
+add_include()
+{
+	the_path=$1
+	if [ -e $the_path ]; then
+		if [ -z $C_INCLUDE_PATH ]; then
+				C_INCLUDE_PATH=$the_path
+		else
+			echo $C_INCLUDE_PATH | grep -q $dir/include
+			if [ $? -ne 0 ] ; then
+				C_INCLUDE_PATH=$the_path:$C_INCLUDE_PATH
+			fi
+		fi
+		if [ -z $CPLUS_INCLUDE_PATH ]; then
+			CPLUS_INCLUDE_PATH=$the_path
+		else
+			echo $CPLUS_INCLUDE_PATH | grep -q $dir/include
+			if [ $? -ne 0 ] ; then
+				CPLUS_INCLUDE_PATH=$the_path:$CPLUS_INCLUDE_PATH
+			fi
+		fi
+	fi
+}
+
+add_bin()
+{
+	the_path=$1
+	if [ -e $the_path ]; then
+		echo $PATH | grep -q $the_path
+		if [ $? -ne 0 ] ; then
+			PATH=$the_path:$PATH
+		fi
+	fi
+}
+####################################################################################
+# usage:
+# my_setup dir
+# if dir exists:
+#  will make libs in dir/lib and dir/lib64 available for the linker 
+#  and headers in dir/include available for gcc
+#  and binaries in dir/bin available for bash
+my_setup()
+{
+	dir=$1
+	if [ -e $dir ]; then
+		
+		#echo $dir found!	
+		add_lib $dir/lib
+		add_lib $dir/lib64
+		add_include $dir/include
+		
+		add_bin $dir/bin		
+	fi
+}
+
+my_setup2 () 
+{
+	local name=$1
+	local dir=$UG4_LOCAL_INSTALL_DIR/$name/used
+	my_setup $dir
+	
+}
+
+my_setup $UG4_LOCAL_INSTALL_DIR/openmpi/1.6
+my_setup llvm
+my_setup2 cmake
+my_setup2 doxygen
+my_setup2 gcc
+my_setup2 gmp
+my_setup2 gnuplot
+my_setup2 GotoBLAS2
+my_setup2 mpfr
+my_setup2 mpc
+my_setup2 ParaView
+my_setup2 metis
+my_setup2 parmetis
+my_setup2 scons
+my_setup2 hlibpro
+my_setup2 ANN
+my_setup2 LUA
+
+add_bin $UG4_LOCAL_INSTALL_DIR/cppcheck/used/
+add_lib $UG4_LOCAL_INSTALL_DIR/hlibpro/used/
+
+add_bin $UG4_LOCAL_INSTALL_DIR/thrift/used/
+add_bin $UG4_LOCAL_INSTALL_DIR/ninja
+
+# tbb
+add_lib $UG4_LOCAL_INSTALL_DIR/tbb/used/lib/intel64/gcc4.4/
+add_lib $UG4_LOCAL_INSTALL_DIR/tbb/used/lib/
+add_include $UG4_LOCAL_INSTALL_DIR/tbb/used/include/
+
+# boost
+add_lib $UG4_LOCAL_INSTALL_DIR/boost/used/stage/lib/
+
+
+# completion for bash (for bash only)
+SHELLTYPE=`ps -o comm="" -p $$`
+case "$SHELLTYPE" in
+	*bash*) complete -W "clang cmake doxygen gcc gnuplot gmp GotoBLAS2 mpc mpfr OpenMPI ParaView Metis ParMetis SuperLU UGIDE  \
+	HYPRE scons boost hlibpro tbb ANN LUA PT all \
+	-fromMac -macServer -fromSvn -svnServer -eclipsepath" -o default -o nospace uginstall
+	;;
+esac
+
+export PATH
+export C_INCLUDE_PATH	
+export CPLUS_INCLUDE_PATH
+export LD_RUN_PATH
+export LD_LIBRARY_PATH
+export LIBRARY_PATH
+export LDFLAGS
+export DYLD_LIBRARY_PATH
+

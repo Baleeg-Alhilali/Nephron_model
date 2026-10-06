@@ -1,0 +1,63 @@
+#!/bin/bash
+# xtermrun by Martin Rupp (martin.rupp@gcsc.uni-frankfurt.de). (c) GCSC 2011-2012.
+# this is a helper script for xprun
+# this scripts adjusts the xwindow size and position so for 4 mpi task, 4 windows fit on screen
+
+# Parameters
+# $1 = xtermgeometry file
+# $2 = command to execute.
+
+# get the geometry from the file xtermgeometry
+source $1
+
+# get PID/numprocs
+if [ -z $OMPI_MCA_ns_nds_num_procs ]; then
+	PID=$OMPI_MCA_orte_ess_vpid
+	np=$OMPI_MCA_orte_ess_num_procs
+else
+	PID=$OMPI_MCA_ns_nds_vpid
+	np=$OMPI_MCA_ns_nds_num_procs
+fi
+
+[[ $PID == 0 ]] && echo "MaxWidth = $maxw, MaxHeight = $maxh, dx = $dx, dy = $dy"
+
+# adjust windows for 2/4/8/16 procs (or less)
+if [  $np -le 2 ]; then
+	w=$((maxw/2))
+	h=$maxh
+	x=$((dx+PID*w))
+	y=$dy
+elif [  $np -le 4 ]; then
+	w=$((maxw/2))
+	h=$((maxh/2))
+	x=$((dx+PID%2*w))
+	y=$((dy+PID/2*h))
+elif [  $np -le 8 ]; then
+	w=$((maxw/2))
+	h=$((maxh/4))
+	x=$((dx+PID%2*w))
+	y=$((dy+PID/2*h))
+elif [  $np -le 16 ]; then
+	w=$((maxw/4))
+	h=$((maxh/4))
+	x=$((dx+PID%4*w))
+	y=$((dy+PID/4*h))
+fi	
+
+w=$(((w*10)/charWidthFactor10))
+h=$(((h*10)/charHeightFactor10))
+
+# parameter -hold is needed on Non-Apple Systems to prevent the
+# windows from being closed automatically.
+# If you have problems with the close behaviour, try
+# adding/removing -hold or +hold
+
+if [[ `uname` == 'Darwin' ]]; then
+	[[ $PID == 0 ]] && echo "On Apple, using xterm without hold"
+	xterm  -e $2
+else
+	[[ $PID == 0 ]] && echo "Not on Apple, using xterm -hold"
+	xterm -hold -geometry ${w}x$h+$x+$y -e $2
+fi
+
+

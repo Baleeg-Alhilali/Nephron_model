@@ -1,0 +1,213 @@
+/*
+ * Copyright (c) 2011-2013:  G-CSC, Goethe University Frankfurt
+ * Author: Andreas Vogel
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUnitTests Unit Tests
+
+For the unit testing of \ug4 the <em>Boost Testing Library</em> 
+is used.
+The test are run by the Continuous Integration Service "Jenkins" (currently on 
+<tt>cave1.gcsc.uni-frankfurt.de</tt>) daily.
+If a test fails reporting email will be sent to the causing developers.
+
+<em>Unit Tests</em> can be carried out in two ways:
+
+- \ref secUnitTestsCode
+- \ref secUnitTestsScripts
+
+For any questions, contact martin.scherer@gcsc.uni-frankfurt.de or
+ andreas.vogel@gcsc.uni-frankfurt.de.
+
+
+<hr>
+\section secUnitTestsCode Testing Code
+
+In order to test the C++-Code directly one can write a piece of code, that is 
+tested automatically.
+All unit test code should be placed in <tt>unit_tests/src/*.cpp</tt>.
+
+If you want to test your own code, add a <tt>*.cpp</tt> file in that section 
+and add your file in the <tt>CMakeList.txt</tt> file.
+ 
+Then start your own test suite as shown by this self-explanatory example:
+\code
+// register test suite
+BOOST_AUTO_TEST_SUITE(myNameSuiteNumProc1);
+
+// add a test
+BOOST_AUTO_TEST_CASE(myTest)
+{
+  int a = 1, b = 2;
+
+  // write a message
+  BOOST_MESSAGE("Starting some test")
+	
+  // check 
+  BOOST_CHECK_MESSAGE(a+b == 3, "1+2 must be 3");
+  BOOST_REQUIRE_MESSAGE(a+b == 3, "1+2 must be 3");
+}
+
+// end of test suite
+BOOST_AUTO_TEST_SUITE_END();
+\endcode
+
+In Detail:
+
+A test suite is used to group several test together and all test suits will be
+detected and tested.
+<tt>BOOST_AUTO_TEST_SUITE</tt> starts a new test suite, that is ended by
+<tt>BOOST_AUTO_TEST_SUITE_END</tt>.
+The name of suite must be a valid C++-Name.
+
+\note The Ending of a Suite must be (by our convention) <tt>*NumProcsXX</tt>, 
+where <tt>XX</tt> is the number of processes the suite should be run with 
+(i.e. MPI-Processes).
+
+<tt>BOOST_AUTO_TEST_CASE</tt> defines a test.
+There can be as many test cases in a suite as you like.
+Using the macros <tt>BOOST_REQUIRE_MESSAGE</tt>, <tt>BOOST_CHECK_MESSAGE</tt> 
+you can now assert several conditions in your code.
+
+
+<hr>
+\section secUnitTestsScripts Testing Scripts
+
+In order to test Lua-Scripts you just have to add the script, that you want to 
+test in the file <tt>unit_tests/data/script_tests/{script_test_param.xml, experimental_plugin.xml}</tt>.
+The file name depends on whether you are testing a script which depends on a core or an experimental plugin.
+
+See this example:
+\code
+<script>
+	<path>conv_diff/laplace_test.lua</path>
+	<!-- on how many processors test this script with all its configurations -->
+	<numProcs>1 3 4 7</numProcs>
+	<!-- every config element leads to a separate test case.
+		nested configs will inherit parameters sets from parent
+	 -->
+	<config-set>
+		<config>
+			<!-- Default config => all nested configs will inherit these parameters.
+				Configs may be nested recursively. -->
+			<parameters>
+				<param name="-numRefs">2</param>
+				<!-- -distType : possible values => [grid2d | bisect | metis] -->
+				<param name="-distType">grid2d</param>
+				<!-- timeout of 6 seconds -->
+				<param name="timeout">12</param>
+			</parameters>
+			
+			<config>
+				<parameters>
+					<param name="-dim">1</param>
+					<!-- todo test other dist types for all dimension -->
+				</parameters>
+			</config>
+			
+			<config>
+				<parameters>
+					<param name="-dim">2</param>
+				</parameters>
+			</config>
+			
+			<config>
+				<parameters>
+					<param name="-dim">3</param>
+				</parameters>
+			</config>
+		</config>
+	</config-set>
+</script>
+\endcode
+
+If you want to add your plugin to the Jenkins automated test procedure, add a line
+-DMyPlugin=ON to the cmake build step section of the Job "ug-build-plugins" and add a
+<tt>\<script\> ... \</script\></tt> section to the experimental_plugin.xml file.
+It is recommended to ensure your script file is able to be executed outside of UG4_ROOT 
+(e.g grids should be not be loaded via absolute path or relative one relying to an unknown runtime location)
+
+Now, two things are tested for each script configuration:
+<ol>
+  <li>In any case the successful run of the script (i.e. no <tt>UGError/LuaError/...</tt> 
+     reported) exception
+  </li>
+  <li>In your script you can add additional requirements and tests as shown in 
+    the example below.
+  </li>
+</ol>
+
+In your script use the functions <tt>test.require(cond, "message")</tt> and 
+<tt>test.check(cond,"message")</tt> to ensure conditions during the run of 
+the script.
+Please note, that this functions are available when <tt>ug_util.lua</tt> is 
+included in your script and that &mdash; if no Boost is available &mdash; the 
+test functions are replaced by dummy methods (see 
+<tt>scripts/util/test_utils.lua</tt>).
+An example:
+\code
+-- Create, Load, Refine and Distribute Domain
+neededSubsets = {"Inner", "Boundary"}
+dom = util.CreateAndDistributeDomain(gridName, numRefs, numPreRefs, neededSubsets)
+test.require(dom ~= nil, "Domain loaded.")
+
+-- create Approximation Space
+approxSpace = ApproximationSpace(dom)
+approxSpace:add_fct("c", "Lagrange", 1)
+approxSpace:print_statistic()
+
+-- lets order indices using Cuthill-McKee
+OrderCuthillMcKee(approxSpace, true);
+\endcode
+
+*/
+
+
+\section secUnitTestsRun Building and running the Testsuite
+
+You are able to use the testsuite locally. To do so you first need build it
+\code
+mkdir build_test
+cd build_test; cmake .. ; make
+\endcode
+
+The testsuite binary will be in the same location as ugshell ($UG4_ROOT/bin).
+
+To run all tests (without experimental script tests) and enabled logging to console invoke it with:
+\code
+	testsuite --console
+\endcode
+Run experimental script tests (or maybe your own parameter binding file):
+\code
+	testsuite --console -script_params $UG4_ROOT/unit_tests/data/script_tests/experimental_plugins.xml
+\endcode
+
+For more parameters please have a look at the boost 
+<a href="live.boost.org/doc/libs/1_48_0/libs/test/doc/html/utf/user-guide/runtime-config/reference.html">documentation</a>

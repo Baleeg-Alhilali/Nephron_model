@@ -1,0 +1,2 @@
+/usr/bin/ar qc /Users/alhilaba/UG4_promesh_ogrid/lib/libtet.a CMakeFiles/tet.dir/tetgen.cxx.o CMakeFiles/tet.dir/predicates.cxx.o
+/usr/bin/ranlib /Users/alhilaba/UG4_promesh_ogrid/lib/libtet.a

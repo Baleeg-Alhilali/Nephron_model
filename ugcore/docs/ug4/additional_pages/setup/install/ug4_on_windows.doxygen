@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2012-2015:  G-CSC, Goethe University Frankfurt
+ * Author: Sebastian Reiter
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageUG4OnWindows Prerequisites on Windows
+
+[TOC]
+
+<hr>
+\section secInstallUg Installation of UG4
+Please follow the description at https://github.com/UG4/ughub to obtain a
+copy of \ug4. Below you'll find hints on how to obtain additional software which
+is required to build \ug4.
+
+
+<hr>
+\section secWindowsCompiler Compiler
+
+The Microsoft Visual C++ 2015 compiler is recommended for compilation of \ug4
+on windows. It can be downloaded as part of the free
+"Express 2015 for Windows Desktop" edition of Visual Studio
+(https://www.visualstudio.com/downloads/#visual-studio-express-2015-for-windows-desktop).
+
+To allow for parallel compilation in the terminal one can optionally use the tool "jom"
+(https://wiki.qt.io/Jom). Extract it and add the path in which the executable
+lies to your path environment variable.
+
+<hr>
+\section secInstallWindowsCMake Install CMake on Windows
+
+Compilation of \ug4 furthermore requires the installation of \em CMake, which 
+can be obtained from here http://www.cmake.org/cmake/resources/software.html
+(min Release 2.6).
+
+If the option is presented to you by the installer, you should choose to install
+the command-line tools, too.
+
+<hr>
+\section secWindowsBuild	Building
+
+	-	Open 'VS2015 x64 Cross Tools Command Prompt'
+		(Start -> All Programs -> Visual Studio 2015)
+		if you want to compile a 64bit version of \ug4. If you only want to
+		compile for 32bit, use 'VS2015 x86 Native Tools Command Prompt'.
+	
+	-	Navigate to your ug4-source-code root folder
+
+	- 	create a new directory called 'build' ('mkdir build').
+
+	-	Before cmake can be run and before jom can be executed one hast to initialize
+		Visual Studios environment variables.
+
+	-	type 'cmake -G"NMake Makefiles JOM" ..\trunk -DSTATIC_BUILD=ON -DCMAKE_BUILD_TYPE=Release -DDIM="2;3" -DCPU=1'.
+		This generates the makefiles required by Jom. You only have to execute cmake if
+		you're initializing a build directory for the first time or if you want to
+		change build options. See note below if you want to use the Visual Studio IDE directly.
+
+	-	You may enable or disable other plugins using cmake, e.g.: 'cmake ..\trunk -DSmallStrainMechanics=OFF'
+
+	-	to execute a build, type 'jom'
+
+\note	If you want to embed the build-process in your favorite IDE (e.g. Eclipse or Sublime)
+		you most likely have to initialize the build environment before executing jom.
+		You can do this by calling, e.g. '"C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86_amd64'
+		before calling jom.
+
+\note	If you want to compile directly using the VisualStudio IDE, you should specify another
+		builder for cmake. Create a new build directory and call, e.g. 'cmake -G"Visual Studio 2013" ...'
+		(rest as above). This creates a visual-studio project which you can edit and compile
+		using the Visual Studio IDE.
+*/

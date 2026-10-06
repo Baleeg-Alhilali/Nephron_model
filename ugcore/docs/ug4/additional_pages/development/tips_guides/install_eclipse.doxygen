@@ -1,0 +1,266 @@
+/*
+ * Copyright (c) 2011-2013:  G-CSC, Goethe University Frankfurt
+ * Author: Andreas Vogel
+ * 
+ * This file is part of UG4.
+ * 
+ * UG4 is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License version 3 (as published by the
+ * Free Software Foundation) with the following additional attribution
+ * requirements (according to LGPL/GPL v3 §7):
+ * 
+ * (1) The following notice must be displayed in the Appropriate Legal Notices
+ * of covered and combined works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (2) The following notice must be displayed at a prominent place in the
+ * terminal output of covered works: "Based on UG4 (www.ug4.org/license)".
+ * 
+ * (3) The following bibliography is recommended for citation and must be
+ * preserved in all covered files:
+ * "Reiter, S., Vogel, A., Heppner, I., Rupp, M., and Wittum, G. A massively
+ *   parallel geometric multigrid solver on hierarchically distributed grids.
+ *   Computing and visualization in science 16, 4 (2013), 151-164"
+ * "Vogel, A., Reiter, S., Rupp, M., Nägel, A., and Wittum, G. UG4 -- a novel
+ *   flexible software system for simulating pde based models on high performance
+ *   computers. Computing and visualization in science 16, 4 (2013), 165-179"
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ */
+
+/** \page pageInstallEclipse Developing with the Eclipse IDE
+
+[TOC]
+
+The page is an install guide for the usage of Eclipse for ug.
+
+\note If you're working at the G-CSC, there is a preconfigured Eclipse download available. Ask for "software server".
+
+<hr>
+\section secInstallEclipseDownload Download Eclipse
+
+<ul>
+  <li>Download the latest release of \em Eclipse from http://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/neonm4a :
+    <em>Eclipse IDE for C/C++ Developers</em>
+  </li>
+  <li>Unzip \em Eclipse and move it to your "Application" folder (MAC only)</li>
+  <li> Start \em Eclipse.
+    On startup you are requested to choose a workspace.
+    This is the location, where your projects will be placed.
+    Specially, \ug4 will be placed here.
+    So, choose an folder where you want \ug4 to be downloaded to.
+    (e.g. <tt>home/projects/</tt>)
+  </li>
+  <li>Make sure that the Eclipse-git Plugin 'EGit' is installed.</li>
+</ul>
+
+
+<hr>
+\section secUG4AndEclipse Generating Eclipse Project-Files
+In order work with UG4 in Eclipse, please download and install UG4 as usual through
+UG4's package-manager (see https://github.com/UG4/ughub).
+
+You'll find detailed instructions on how to generate and import UG4 project-files
+for Eclipse here: https://github.com/UG4/ughub#importing-ug4-into-your-ide
+
+
+<hr>
+\section secInstallEclipseUseMakefiles Build in Eclipse using external Makefiles
+<hr>
+
+In order to build the \ug4 libraries via \em Eclipse, you first must create the 
+Makefiles.
+This is done using \em Cmake in the terminal (go to \ref pageUG4Setup if you did not already install \em CMake).
+
+<ol>
+  <li>Open a terminal/shell window</li>
+  <li>move into your workspace directory you chose before</li>
+  <li><tt>cd ug4</tt></li>
+  <li><tt>mkdir build_debug</tt></li>
+  <li><tt>cd build_debug</tt></li>
+  <li><tt>cmake -DDEBUG=ON ..</tt> --> Makefiles are generated</li>
+</ol>
+
+Note, that once the Makefiles have been created, you do not have to rebuild them
+at any time.
+This step has to be performed only once.
+Now, these Makefiles can be used in \em Eclipse:
+
+<ol>
+  <li>Click right on folder <tt>ug4</tt> -> Choose \em Properties </li>
+  <li>Under <em>C/C++-Build</em>:</li>
+  <li>Disable <em>Generate Makefiles automatically</em></li>
+  <li>Disable <em>Use default build command</em></li>
+  <li>Choose <em>Build directory: ...</em> -> Click <em>Filesystem</em> -> 
+    Choose newly created folder <tt>build_debug</tt></li>
+  <li>In <em>Behaviour</em>: In <em>Build (incremential build)</em> remove 
+    \em all
+  </li>
+  <li>Disable automatically build:
+    In Heading bar: \em Project -> remove <em>Build automatically</em>
+  </li>
+</ol>
+
+You find the binary in <tt>ug4/bin/</tt> with the name <tt>ugshell</tt>
+
+
+<hr>
+\section secInstallEclipseRunExecutable	Run ug-executable via Eclipse
+
+If you want you can also start the executable from \em Eclipse.
+This is especially useful if you like to use the build-in Debugger. 
+
+<ol>
+  <li><tt>ug4</tt> -> \em Properties </li>
+  <li><em>Run/Debug Settings</em></li>
+  <li>Click <em>New ...</em> -> <em>C/C++ Application</em></li>
+  <li>Fill in executable: \em Browse -> <tt>ug4/bin/ugshell</tt></li>
+  <li>Choose \em Arguments -> <em>Program arguments</em>:
+    Fill in: <tt>-ex laplace.lua</tt>
+  </li>
+</ol>
+
+Of course, if needed, use adapted arguments.
+
+
+<hr>
+\section secInstallEclipsePathSymbols Path and Symbols
+
+\em Eclipse has a powerful Autocompletion-Mechanism, Syntax-Highlighting for 
+C++ and many other things.
+To make them available, you have to tell Eclipse, where to look for:
+
+<ol>
+  <li>Click right on folder \c ug4 -> Choose \em Properties </li>
+  <li>Under <em>C/C++-General</em> -> Subfolder <em>Path and Symbols</em></li>
+  <li>Under \em Includes click <em>Add ...</em></li>
+  <li>Click on <em>Workspace ...</em> and choose the folder \c ugbase </li>
+  <li>Check: <em>Add to all languages</em> and <em>Add to all 
+    configurations</em>
+  </li>
+</ol> 
+
+If you use build flags, you must tell \em Eclipse to recognize them.
+Specially, if you do not use \c UG_PARALLEL, all Parallel Code will not be 
+highlighted but regarded as dead code.
+So, add it to the Environment:
+
+<ol>
+  <li>Click right on folder \c ug4 -> Choose \em Properties </li>
+  <li>Under <em>C/C++-General</em> -> Subfolder <em>Path and Symbols</em></li>
+  <li>Under \em Symbols click <em>Add ...</em></li>
+  <li>Fill in \c UG_PARALLEL, value: \c ON </li>
+  <li>Check: <em>Add to all languages</em> and <em>Add to all 
+    configurations</em>
+  </li>
+</ol> 
+
+
+<hr>
+\section secInstallEclipseSyntaxLua Syntax Highlighting in Lua 
+
+\em Lua is the recommended scripting language in \ug4.
+In order to have a more comfortable editing of Lua-Scripts you should install a 
+Plugin.
+We created an own plugin which provides Syntax Highlighting and code completion for
+the ug4 registry functions/classes: Go here <a href="http://gcsc.uni-frankfurt.de/Members/mrupp/ug4-auto-completion/">ugIDE</a> for further details.
+<br><br>
+Available Plugins:
+\note You can only install one plugin at a time.
+
+<ul>
+<li> <a href="http://gcsc.uni-frankfurt.de/Members/mrupp/ug4-auto-completion/">ugIDE</a></li>
+<li> luaEclipse:<br>
+You find a link to the install site under:
+http://luaeclipse.luaforge.net/preview/update-site<br>
+E.g. on MacOSX use:
+http://luaeclipse.luaforge.net/preview/update-site/macosx.carbon/site.xml
+<ol>
+  <li>Open plugin install panel: \em Help -> <em>Install new Software ...</em></li>
+  <li>Insert link above into: <em>Work with: ....</em></li>
+  <li>Choose <em>LuaEclipse 1.3.1</em> and click <em>next</em></li>
+  <li>Accept license agreement</li>
+  <li>Finish and restart</li>
+</ol>
+</li>
+<li>(not recommended) \em LunarEclipse 
+(http://lunareclipse.sourceforge.net/update.html)
+</li>
+</ul>
+<hr>
+\section secInstallEclipseSyntaxDoxygen Syntax Highlighting for Doxygen
+
+As \em Doxygen is used for generating the documentation for \ug4, it is handy 
+having the \em Doxygen commands as <tt>\\brief</tt>, <tt>\\param</tt> or alike 
+highlighted correctly.
+
+In \em Eclipse one have to activate that implicitly.
+Therefore two actions need to be taken in \em Eclipse:
+<ol>
+  <li><em>Window</em> (<em>Eclipse</em>) or-> <em>Preferences</em> -> <em>C / C++</em> -> 
+    <em>File Types</em> -> <em>New ...</em> -> <tt>*.doxygen</tt> and
+    <em>Type</em> -> <em>C++ Source</em>.
+    Confirm with <em>OK</em>.
+  </li>
+  <li><em>Window</em> (<em>Eclipse</em>) or-> <em>Preferences</em> -> <em>C / C++</em> -> 
+    <em>Editor</em>, under <em>Documentation tool comments</em> select <em>Doxygen</em> as workspace default.
+    Confirm with <em>OK</em>.
+    </li>
+</ol>
+
+<hr>
+\section secInstallEclipseAdditional Additional Tipps & Tricks
+
+ - Speeding up the indexer: Eclipse -> Properties. Subfolder C/C++ -> Indexer : Disable Index unused headers, Enable Index source and header files opened in editor.
+ - Line Numbers: Eclipse -> Properties. Subfolder General -> Editors -> Text Editors. Enable "Show line numbers".
+ - Show Changes in File: Eclipse -> Properties. Subfolder General -> Editors -> Text Editors -> <a href="http://help.eclipse.org/juno/index.jsp?topic=%2Forg.eclipse.platform.doc.user%2Ftasks%2Ftasks-cvs-quickdiff.htm">Quick Diff</a>. Enable "Show differences in overview ruler" and set "SVN Working Copy Base" as reference source.
+ - Switching Tabs: On Mac: Cmd+F6. On Windows: Ctrl+F6. Ctrl+PageUp / Ctrl+PageDown: Cycle through tabs without showing a list.
+ - search a file in the tabs: Cmd+E (Mac)
+ - search a symbol (e.g. function) in the current file: Cmd+O (Mac) or Ctrl+O (other)
+ - quick open a resource (e.g. a file): Cmd+Shift+R (Mac) or Ctrl+Shift+R (other). Enter filename.
+ - quick open a symbol: Cmd+Shift+T (Mac) or Ctrl+Shift+T (other). Enter type/class/function name (will only work when current file is .h or .cpp)
+ - correct indention: Cmd+i (Mac) or Ctrl+i (other)
+ - goto line: Cmd+L (Mac) or Ctrl+L (other)
+ - You can change key mappings under Eclipse -> Properties, General -> Keys. (e.g. Next Editor to Ctrl+Tab, previous Editor to Ctrl+Shift+Tab)
+ - Other recommended plugins are <a href="http://marketplace.eclipse.org/content/cmake-editor">CMake plugin</a> (install site http://cmakeed.sourceforge.net/eclipse/), 
+  <a href="http://texlipse.sourceforge.net/screenshots/">TeXclipse</a> (install site http://texlipse.sourceforge.net).
+
+<hr>
+\section secUG4ProjectInEclipse Create an UG4 project from exisiting source in Eclipse
+Sometimes you already have checked out the source and just want to add ug4 as a project into Eclipse.
+This can be the case if you did svn manually or want to use Eclipse to remotely edit files that
+you access via \ref secSSHFS or via other file networks.
+
+<ul>
+  <li>In Eclipse's Menu, choose \em File -> \em New -> <em> C++ Project</em>
+  </li>
+  <li>Uncheck "Use default location"  </li>
+  <li>Use "Browse" to select the root directory of your ug4.</li>
+  <li>Enter a name for that project. This can be different from the name of your ug4 directory and
+  has to be different from all other projects in eclipse, so you could also choose something like "ug4onHermit". </li>
+</ul>
+
+Note that this will create two new files in your ug4 directory: .cproject and .project.
+If you want to use this project in another eclipse (like another version or on another computer),
+you have to use \em File -> \em Import -> <em> Existing Projects into Workspace </em>.
+
+
+<hr>
+\section secInstallEclipseTroubleshooting Troubleshooting
+
+- Eclipse hangs up at "Loading workbench": Try to reset your workspace (see below)
+- C++-Autocompletion not working/hanging up: Try to reset your workspace (see below)
+- Reset your workspace: Quit Eclipse. Go to your workspace directory, and there to <tt>.metadata/.plugins</tt>. (That's where eclipse stores all the workspace data, like which projects you have in eclipse, and also
+C++-Indexer files).  Delete all directories there except for <tt>org.eclipse.core.resources</tt>, <tt>org.eclipse.core.runtime</tt> and <tt>org.eclipse.cdt.core</tt>.
+Index files are stored in <tt>org.eclipse.cdt.core</tt>, you can delete that too if it is still not working. There's also a script for that in
+<tt>ug4/scripts/shell/ugrestoreworkspace</tt> (execute in your workspace dir). 
+- SVN Information not showing for a project: Try to delete the project from the workspace, then add it again (import -> existing workspace).
+- A project is damaged in eclipse and you want to set it up from scratch: Delete it from the workspace. Quit Eclipse. Go to the projects directory and delete the files <tt>.project</tt>, <tt>.cproject</tt> and <tt>.settings</tt>. 
+ 
+
+ * 
+*/
+// other stuff: http://stackoverflow.com/questions/2707986/eclipse-encoding-macroman-utf8
+// texclipse: http://texlipse.sourceforge.net/manual/installation.html
