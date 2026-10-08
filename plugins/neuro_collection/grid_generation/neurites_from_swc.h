@@ -56,6 +56,19 @@ namespace ug {
 namespace neuro_collection {
 namespace neurites_from_swc {
 
+/** Configure optional curvature-limited tube spacing and graded Inter sizing. */
+void configure_adaptive_nephron_meshing
+(
+	bool curvatureLimitedAnisotropy,
+	number minimumBendAnisotropy,
+	number bendChordErrorFactor,
+	bool gradedInter,
+	number interNearEdgeFactor,
+	number interNearDistanceFactor,
+	number interFarDistanceFactor,
+	number interFarEdgeFactor
+);
+
 
 /**
  * @brief Creates a 3D grid representation of a cable geometry given as SWC file.

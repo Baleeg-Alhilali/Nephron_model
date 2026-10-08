@@ -988,6 +988,8 @@ static void Common(Registry& reg, string grp)
 #ifndef UG_FOR_VRL
 	// neurites from swc
 	{
+		reg.add_function("configure_adaptive_nephron_meshing", &neurites_from_swc::configure_adaptive_nephron_meshing, "",
+			"curvature-limited anisotropy # minimum bend anisotropy # bend chord-error/radius # graded Inter # near edge factor # near distance factor # far distance factor # far edge factor", "");
 		reg.add_function("import_neurites_from_swc", &neurites_from_swc::import_neurites_from_swc, "",
 			"file name # anisotropy # refinements", "");
 		reg.add_function("import_neurites_with_box_from_swc", &neurites_from_swc::import_neurites_with_box_from_swc, "",

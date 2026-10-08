@@ -100,6 +100,65 @@ struct OuterWallTerminalMetadata
 };
 
 
+struct AdaptiveNephronMeshingControls
+{
+	bool curvatureLimitedAnisotropy;
+	number minimumBendAnisotropy;
+	number bendChordErrorFactor;
+	bool gradedInter;
+	number interNearEdgeFactor;
+	number interNearDistanceFactor;
+	number interFarDistanceFactor;
+	number interFarEdgeFactor;
+	AdaptiveNephronMeshingControls()
+		: curvatureLimitedAnisotropy(false), minimumBendAnisotropy(1.0),
+		  bendChordErrorFactor(0.02), gradedInter(false),
+		  interNearEdgeFactor(2.0), interNearDistanceFactor(1.5),
+		  interFarDistanceFactor(6.0), interFarEdgeFactor(6.0) {}
+};
+
+static AdaptiveNephronMeshingControls g_adaptiveNephronMeshing;
+
+
+void configure_adaptive_nephron_meshing
+(
+	bool curvatureLimitedAnisotropy,
+	number minimumBendAnisotropy,
+	number bendChordErrorFactor,
+	bool gradedInter,
+	number interNearEdgeFactor,
+	number interNearDistanceFactor,
+	number interFarDistanceFactor,
+	number interFarEdgeFactor
+)
+{
+	UG_COND_THROW(minimumBendAnisotropy < 1.0,
+	              "Minimum bend anisotropy must be at least 1.");
+	UG_COND_THROW(bendChordErrorFactor <= 0.0,
+	              "Bend chord-error factor must be positive.");
+	UG_COND_THROW(interNearEdgeFactor <= 0.0 || interFarEdgeFactor < interNearEdgeFactor,
+	              "Inter edge factors must be positive and far >= near.");
+	UG_COND_THROW(interNearDistanceFactor < 0.0
+	              || interFarDistanceFactor <= interNearDistanceFactor,
+	              "Inter distance factors require 0 <= near < far.");
+	g_adaptiveNephronMeshing.curvatureLimitedAnisotropy = curvatureLimitedAnisotropy;
+	g_adaptiveNephronMeshing.minimumBendAnisotropy = minimumBendAnisotropy;
+	g_adaptiveNephronMeshing.bendChordErrorFactor = bendChordErrorFactor;
+	g_adaptiveNephronMeshing.gradedInter = gradedInter;
+	g_adaptiveNephronMeshing.interNearEdgeFactor = interNearEdgeFactor;
+	g_adaptiveNephronMeshing.interNearDistanceFactor = interNearDistanceFactor;
+	g_adaptiveNephronMeshing.interFarDistanceFactor = interFarDistanceFactor;
+	g_adaptiveNephronMeshing.interFarEdgeFactor = interFarEdgeFactor;
+	UG_LOGN("Adaptive nephron meshing: curvatureLimitedAnisotropy="
+	        << curvatureLimitedAnisotropy << ", minimumBendAnisotropy="
+	        << minimumBendAnisotropy << ", bendChordErrorFactor="
+	        << bendChordErrorFactor << ", gradedInter=" << gradedInter
+	        << ", Inter edge factors=" << interNearEdgeFactor << " -> "
+	        << interFarEdgeFactor << ", distance factors="
+	        << interNearDistanceFactor << " -> " << interFarDistanceFactor << ".");
+}
+
+
 static OuterWallTerminalMetadata read_outer_wall_terminal_metadata
 (
 	const std::string& fileName
@@ -163,7 +222,10 @@ static void snap_refined_terminal_vertices_to_outer_wall
 		diagonal += (metadata.boxMax[d] - metadata.boxMin[d])
 			* (metadata.boxMax[d] - metadata.boxMin[d]);
 	diagonal = std::sqrt(diagonal);
-	const number maximumSnapDistance = std::max((number)1e-8, diagonal * 2e-2);
+	const number numericalLengthTolerance = std::numeric_limits<number>::epsilon()
+		* diagonal * 64.0;
+	const number maximumSnapDistance = std::max(
+		numericalLengthTolerance, diagonal * 2e-2);
 	size_t snapped = 0;
 	for (VertexIterator vit = g.begin<Vertex>(); vit != g.end<Vertex>(); ++vit)
 	{
@@ -244,7 +306,19 @@ static size_t restore_coincident_neurite_surface_params
 )
 {
 	typedef std::array<long long,3> PositionKey;
-	const number keyScale = 1e12;
+	vector3 gridMin(std::numeric_limits<number>::max());
+	vector3 gridMax(-std::numeric_limits<number>::max());
+	for (VertexIterator it = grid.begin<Vertex>(); it != grid.end<Vertex>(); ++it)
+		for (size_t d = 0; d < 3; ++d)
+		{
+			gridMin[d] = std::min(gridMin[d], aaPos[*it][d]);
+			gridMax[d] = std::max(gridMax[d], aaPos[*it][d]);
+		}
+	const number gridDiagonal = VecDistance(gridMin, gridMax);
+	const number coincidenceTolerance = std::max(
+		std::numeric_limits<number>::epsilon() * gridDiagonal * 64.0,
+		gridDiagonal * 1e-11);
+	const number keyScale = 1.0 / coincidenceTolerance;
 	auto key = [&] (Vertex* vertex) -> PositionKey
 	{
 		PositionKey result = {{
@@ -269,7 +343,8 @@ static size_t restore_coincident_neurite_surface_params
 		if (found == validAtPosition.end()) continue;
 		vector3 difference;
 		VecSubtract(difference, aaPos[vertex], aaPos[found->second]);
-		if (VecLengthSq(difference) > 1e-22) continue;
+		if (VecLengthSq(difference) > coincidenceTolerance*coincidenceTolerance)
+			continue;
 		aaSurfParams[vertex] = aaSurfParams[found->second];
 		++restored;
 	}
@@ -2328,7 +2403,9 @@ static void create_neurite_with_er
 		// Keep spline/chord midpoint error below 20% of local membrane thickness.
 		// A denser 5% threshold produced nearly coplanar rings that destabilized
 		// TetGen facet recovery; 20% remains small relative to the shell width.
-		const bool enableCurvatureSubdivision = false;
+		const bool enableCurvatureSubdivision =
+			g_adaptiveNephronMeshing.curvatureLimitedAnisotropy
+			&& anisotropy > g_adaptiveNephronMeshing.minimumBendAnisotropy;
 		if (useMatchingNephronOGrid && enableCurvatureSubdivision)
 		{
 			auto centerAndRadiusAt = [&] (number axial, vector3& center, number& radius)
@@ -2353,16 +2430,34 @@ static void create_neurite_with_er
 			splitInterval = [&] (number a, number b, size_t depth)
 			{
 				const number mid = 0.5*(a+b);
-				vector3 pa, pm, pb, chordMid;
-				number ra, rm, rb;
+				const number q1 = 0.5*(a+mid);
+				const number q3 = 0.5*(mid+b);
+				vector3 pa, pq1, pm, pq3, pb, chordQ1, chordMid, chordQ3;
+				number ra, rq1, rm, rq3, rb;
 				centerAndRadiusAt(a, pa, ra);
+				centerAndRadiusAt(q1, pq1, rq1);
 				centerAndRadiusAt(mid, pm, rm);
+				centerAndRadiusAt(q3, pq3, rq3);
 				centerAndRadiusAt(b, pb, rb);
+				VecScaleAdd(chordQ1, 0.75, pa, 0.25, pb);
 				VecScaleAdd(chordMid, 0.5, pa, 0.5, pb);
-				const number error = VecDistance(pm, chordMid);
+				VecScaleAdd(chordQ3, 0.25, pa, 0.75, pb);
+				const number error = std::max(VecDistance(pq1, chordQ1),
+					std::max(VecDistance(pm, chordMid), VecDistance(pq3, chordQ3)));
+				const number curvedLength = VecDistance(pa, pq1)
+					+ VecDistance(pq1, pm) + VecDistance(pm, pq3)
+					+ VecDistance(pq3, pb);
 				const number thickness =
 					std::max<number>(1e-8, (1.0-erScaleFactor)*rm);
-				if (error > 0.20*thickness && depth < 12)
+				const number bendTargetLength =
+					g_adaptiveNephronMeshing.minimumBendAnisotropy
+					* 2.0 * PI * rm / static_cast<number>(nOGrid);
+				const bool bendDetected = error >
+					g_adaptiveNephronMeshing.bendChordErrorFactor * rm;
+				const bool bendTooLong = bendDetected
+					&& curvedLength > bendTargetLength;
+				const bool geometryTooCurved = error > 0.20*thickness;
+				if ((bendTooLong || geometryTooCurved) && depth < 12)
 				{
 					splitInterval(a, mid, depth+1);
 					splitInterval(mid, b, depth+1);
@@ -3546,7 +3641,10 @@ static void create_padded_box_surface
 			// from the root SWC sample to avoid a short initial cell. A sub-cell
 			// correction is therefore expected at the root; the long straight
 			// wall-normal tail makes this snap shape-preserving.
-			const number maximumSnapDistance = std::max((number)1e-8, diagonal * 2e-2);
+			const number numericalLengthTolerance =
+				std::numeric_limits<number>::epsilon() * diagonal * 64.0;
+			const number maximumSnapDistance = std::max(
+				numericalLengthTolerance, diagonal * 2e-2);
 			UG_COND_THROW(nearestDistance > maximumSnapDistance,
 			              "Terminal center is " << nearestDistance
 			              << " from its nearest OuterWall plane; extension metadata and spline disagree.");
@@ -3585,7 +3683,9 @@ static void create_padded_box_surface
 			        << ", tangential center correction="
 			        << std::sqrt(VecLengthSq(tangentialShift)) << ".");
 		}
-		const number planeTolerance = std::max((number)1e-12, diagonal * 1e-10);
+		const number planeTolerance = std::max(
+			std::numeric_limits<number>::epsilon() * diagonal * 64.0,
+			diagonal * 1e-10);
 		UG_LOGN("Snapped " << snappedVertices
 		        << " terminal-section vertices exactly onto OuterWall planes.");
 		for (EdgeIterator eit = g.begin<Edge>(); eit != g.end<Edge>(); ++eit)
@@ -4464,7 +4564,9 @@ static void add_inter_to_version2_nephron
 		for (size_t d = 0; d < 3; ++d)
 			binSize = std::max(binSize,
 			                   oldTubeVolumes[h].boxMax[d] - oldTubeVolumes[h].boxMin[d]);
-	binSize = std::max<number>(binSize * 1.01, 1e-6);
+	UG_COND_THROW(binSize <= 0.0,
+	              "Cannot build a spatial index for zero-size tube volumes.");
+	binSize *= 1.01;
 	typedef std::array<int, 3> BinKey;
 	std::map<BinKey, std::vector<size_t> > tubeBins;
 	auto binKey = [&] (const vector3& p) -> BinKey
@@ -4486,6 +4588,12 @@ static void add_inter_to_version2_nephron
 	auto pointInRecordedVolume = [&] (const TubeVolumeRecord& rec,
 	                                  const vector3& p) -> bool
 	{
+		number recordScale = 0.0;
+		for (size_t d = 0; d < 3; ++d)
+			recordScale = std::max(recordScale, rec.boxMax[d] - rec.boxMin[d]);
+		const number containmentTolerance = std::max(
+			std::numeric_limits<number>::epsilon() * recordScale * 64.0,
+			recordScale * 1e-6);
 		vector3 volumeCenter(0.0);
 		for (size_t i = 0; i < rec.vrts.size(); ++i)
 			volumeCenter += aaPos[rec.vrts[i]];
@@ -4505,7 +4613,8 @@ static void add_inter_to_version2_nephron
 			VecSubtract(toCenter, volumeCenter, faceCenter);
 			if (VecProd(normal, toCenter) > 0.0) normal *= -1.0;
 			VecSubtract(toPoint, p, faceCenter);
-			if (VecProd(normal, toPoint) > 1e-9 * sqrt(VecNormSquared(normal)))
+			if (VecProd(normal, toPoint) > containmentTolerance
+				* sqrt(VecNormSquared(normal)))
 				return false;
 		}
 		return true;
@@ -4866,6 +4975,120 @@ static void add_isolated_inter_to_version2_nephron
 	              << " non-manifold edges.");
 	UG_COND_THROW(!Tetrahedralize(tg, tsh, tetQuality, true, true, aPosition, 1),
 	              "Failed to tetrahedralize the isolated exterior Inter grid.");
+
+	// Optionally refine the tetrahedral field by a continuous distance-to-nephron
+	// size rule.  The first TetGen pass supplies a valid conforming PLC mesh.  Its
+	// Basolateral edge scale defines the near-field target, so this remains
+	// independent of whether coordinates are stored in um or mm.  TetGen's
+	// retetrahedralization consumes one maximum-volume value per existing tet and
+	// inserts interior points without changing the trusted boundary vertices.
+	if (g_adaptiveNephronMeshing.gradedInter)
+	{
+		std::set<Vertex*> tubeBoundaryVertices;
+		std::vector<number> tubeBoundaryEdgeLengths;
+		for (FaceIterator fit = tg.begin<Face>(); fit != tg.end<Face>(); ++fit)
+		{
+			Face* face = *fit;
+			if (tsh.get_subset_index(face) != 2) continue;
+			for (size_t i = 0; i < face->num_vertices(); ++i)
+			{
+				Vertex* a = face->vertex(i);
+				Vertex* b = face->vertex((i + 1) % face->num_vertices());
+				tubeBoundaryVertices.insert(a);
+				tubeBoundaryVertices.insert(b);
+				const number length = VecDistance(taaPos[a], taaPos[b]);
+				if (length > 0.0) tubeBoundaryEdgeLengths.push_back(length);
+			}
+		}
+		UG_COND_THROW(tubeBoundaryVertices.empty() || tubeBoundaryEdgeLengths.empty(),
+		              "Graded Inter sizing found no Basolateral boundary geometry.");
+		std::sort(tubeBoundaryEdgeLengths.begin(), tubeBoundaryEdgeLengths.end());
+		const number surfaceScale = tubeBoundaryEdgeLengths[
+			(tubeBoundaryEdgeLengths.size() - 1) / 4];
+		const number nearDistance =
+			g_adaptiveNephronMeshing.interNearDistanceFactor * surfaceScale;
+		const number farDistance =
+			g_adaptiveNephronMeshing.interFarDistanceFactor * surfaceScale;
+		const number nearEdge =
+			g_adaptiveNephronMeshing.interNearEdgeFactor * surfaceScale;
+		const number farEdge =
+			g_adaptiveNephronMeshing.interFarEdgeFactor * surfaceScale;
+
+		ANumber aVolumeConstraint;
+		tg.attach_to_volumes_dv(aVolumeConstraint, -1.0, true);
+		Grid::VolumeAttachmentAccessor<ANumber> aaVolumeConstraint(
+			tg, aVolumeConstraint);
+		size_t constrainedTetrahedra = 0;
+		for (VolumeIterator vit = tg.begin<Volume>(); vit != tg.end<Volume>(); ++vit)
+		{
+			Volume* volume = *vit;
+			vector3 center(0.0);
+			for (size_t i = 0; i < volume->num_vertices(); ++i)
+				center += taaPos[volume->vertex(i)];
+			center *= 1.0 / static_cast<number>(volume->num_vertices());
+			number distanceToTube = std::numeric_limits<number>::max();
+			for (std::set<Vertex*>::const_iterator it = tubeBoundaryVertices.begin();
+			     it != tubeBoundaryVertices.end(); ++it)
+				distanceToTube = std::min(distanceToTube,
+				                              VecDistance(center, taaPos[*it]));
+			if (distanceToTube >= farDistance)
+			{
+				aaVolumeConstraint[volume] = -1.0;
+				continue;
+			}
+			const number blend = farDistance > nearDistance
+				? std::max<number>(0.0, std::min<number>(1.0,
+					(distanceToTube - nearDistance) / (farDistance - nearDistance)))
+				: 1.0;
+			const number targetEdge = nearEdge + blend * (farEdge - nearEdge);
+			// A regular tetrahedron has volume h^3/(6*sqrt(2)).  Using 0.10
+			// leaves a small safety margin below that ideal value.
+			aaVolumeConstraint[volume] = 0.10 * targetEdge * targetEdge * targetEdge;
+			++constrainedTetrahedra;
+		}
+		UG_LOGN("Graded Inter sizing: surface scale=" << surfaceScale
+		        << ", distance=" << nearDistance << " -> " << farDistance
+		        << ", target edge=" << nearEdge << " -> " << farEdge
+		        << ", constrained initial tetrahedra=" << constrainedTetrahedra << ".");
+		UG_COND_THROW(!Retetrahedralize(tg, tsh, aVolumeConstraint, tetQuality,
+		                                    true, true, aPosition, true, 1),
+		              "Failed graded Inter retetrahedralization.");
+
+		// Report the achieved spatial grading, not only the requested size field.
+		// This makes over-refinement visible in ordinary build logs and keeps the
+		// defaults tunable across nephron radii and box sizes.
+		size_t bandCount[3] = {0, 0, 0};
+		number bandEdgeSum[3] = {0.0, 0.0, 0.0};
+		for (VolumeIterator vit = tg.begin<Volume>(); vit != tg.end<Volume>(); ++vit)
+		{
+			Volume* volume = *vit;
+			vector3 center(0.0);
+			for (size_t i = 0; i < volume->num_vertices(); ++i)
+				center += taaPos[volume->vertex(i)];
+			center *= 1.0 / static_cast<number>(volume->num_vertices());
+			number distanceToTube = std::numeric_limits<number>::max();
+			for (std::set<Vertex*>::const_iterator it = tubeBoundaryVertices.begin();
+			     it != tubeBoundaryVertices.end(); ++it)
+				distanceToTube = std::min(distanceToTube,
+				                              VecDistance(center, taaPos[*it]));
+			const size_t band = distanceToTube < nearDistance ? 0
+				: (distanceToTube < farDistance ? 1 : 2);
+			number longestEdge = 0.0;
+			for (size_t i = 0; i < volume->num_vertices(); ++i)
+				for (size_t j = i + 1; j < volume->num_vertices(); ++j)
+					longestEdge = std::max(longestEdge,
+						VecDistance(taaPos[volume->vertex(i)], taaPos[volume->vertex(j)]));
+			++bandCount[band];
+			bandEdgeSum[band] += longestEdge;
+		}
+		UG_LOGN("Achieved Inter grading (near/transition/far): tetrahedra="
+		        << bandCount[0] << "/" << bandCount[1] << "/" << bandCount[2]
+		        << ", mean longest edge="
+		        << (bandCount[0] ? bandEdgeSum[0]/bandCount[0] : 0.0) << "/"
+		        << (bandCount[1] ? bandEdgeSum[1]/bandCount[1] : 0.0) << "/"
+		        << (bandCount[2] ? bandEdgeSum[2]/bandCount[2] : 0.0) << ".");
+		tg.detach_from_volumes(aVolumeConstraint);
+	}
 
 	// Do not delete tetrahedra using center/near-vertex point samples here.
 	// TetGen has already recovered the Basolateral PLC facets.  Sampling close
@@ -5717,7 +5940,7 @@ static void report_nephron_surface_projection_residual
 )
 {
 	const number endpointTolerance = 1e-7;
-	const number residualTolerance = 1e-12;
+	const number relativeResidualTolerance = 1e-8;
 	size_t checked = 0;
 	size_t limited = 0;
 	number maximumResidual = 0.0;
@@ -5759,6 +5982,9 @@ static void report_nephron_surface_projection_residual
 		++checked;
 		residualSum += residual;
 		maximumResidual = std::max(maximumResidual, residual);
+		const number residualTolerance = std::max(
+			std::numeric_limits<number>::epsilon() * requestedRadius * 64.0,
+			requestedRadius * relativeResidualTolerance);
 		if (residual > residualTolerance) ++limited;
 	}
 	UG_LOGN("Refinement level " << refinementLevel
@@ -6101,8 +6327,10 @@ static size_t assign_indexed_nephron_subsets
 	number boxSpan = 0.0;
 	for (size_t d = 0; d < 3; ++d)
 		boxSpan = std::max(boxSpan, boxHi[d] - boxLo[d]);
-	const number boxPlaneTolerance =
-		std::max<number>(1e-10, 1e-8 * boxSpan);
+	const number boxPlaneTolerance = std::max<number>(
+		std::numeric_limits<number>::epsilon()
+			* std::max<number>(boxSpan, 1.0) * 64.0,
+		1e-8 * boxSpan);
 	auto liesOnOuterBoxPlane = [&] (Face* face) -> bool
 	{
 		for (size_t d = 0; d < 3; ++d)
