@@ -1,0 +1,21 @@
+UG4 BACKUP DESIGN DECISIONS
+===========================
+
+1. The backup is flattened.
+   UG4 is assembled from many nested repositories. A flattened snapshot stores
+   the exact current files, including uncommitted edits, in one owned remote.
+
+2. The original repositories remain untouched.
+   Synchronization reads from the build tree and writes to a separate working
+   copy. Upstream remotes and histories are not changed.
+
+3. Compiled libraries use Git LFS.
+   Several dylib and archive files are too large or inefficient for ordinary
+   Git objects. The repository tracks *.dylib, *.so, and *.a with Git LFS.
+
+4. ug4-build is a backup branch, not a development branch.
+   New UG4 work continues in the original build. The backup branch records
+   timestamped snapshots produced by the synchronization script.
+
+5. Dated archive branches are immutable recovery points.
+   They make major reorganizations or build changes reversible.

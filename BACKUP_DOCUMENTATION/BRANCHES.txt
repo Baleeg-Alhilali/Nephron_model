@@ -1,0 +1,22 @@
+NEPHRON_MODEL BRANCHES
+======================
+
+ug4-build
+---------
+Purpose: current flattened snapshot of /Users/alhilaba/UG4_promesh_ogrid.
+Contents: source, plugins, externals, build files, binaries, and compiled
+libraries. Nested .git databases are intentionally excluded. Compiled
+libraries are managed by Git LFS.
+
+archive/ug4-build-2026-10-08
+--------------------------------
+Purpose: read-only recovery point taken immediately before the 2026-10-08
+build update.
+Reason: allows restoration of the earlier complete build without rewriting
+ug4-build history.
+
+Workflow
+--------
+The scheduled backup synchronizes the original UG4 tree into an independent
+flattened repository, commits changes on ug4-build, and pushes to GitHub.
+Archive branches are never updated after creation.

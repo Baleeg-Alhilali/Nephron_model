@@ -1,0 +1,27 @@
+UG4 BUILD BACKUP CONTENTS
+=========================
+
+Original working build
+  /Users/alhilaba/UG4_promesh_ogrid
+
+Independent Git working copy
+  /Users/alhilaba/UG4_promesh_ogrid_backup
+
+Remote
+  https://github.com/Baleeg-Alhilali/Nephron_model
+
+Included
+--------
+- UG4 core source.
+- Installed plugin and external source trees.
+- Local uncommitted modifications flattened as normal files.
+- CMake build tree, binaries, libraries, and ughub metadata.
+- Backup script and repository documentation.
+
+Excluded
+--------
+- Every nested .git directory or .git pointer from cloned upstream projects.
+- The independent backup repository's own .git metadata.
+
+This design does not modify the remotes, branches, commits, or working-tree
+state of the original cloned UG4 repositories.

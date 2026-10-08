@@ -1,0 +1,25 @@
+RESTORING THE UG4 BUILD
+=======================
+
+Prerequisites
+-------------
+- Git
+- Git LFS
+- Access to https://github.com/Baleeg-Alhilali/Nephron_model
+
+Restore current ug4-build
+-------------------------
+  git lfs install
+  git clone --branch ug4-build \
+    https://github.com/Baleeg-Alhilali/Nephron_model.git UG4_promesh_ogrid_restore
+
+Restore the pre-update archive
+------------------------------
+  git clone --branch archive/ug4-build-2026-10-08 \
+    https://github.com/Baleeg-Alhilali/Nephron_model.git UG4_promesh_archive
+
+Important
+---------
+The restored tree is a flattened snapshot. It contains source and build files,
+but nested upstream Git histories are intentionally absent. Reconfigure or
+rebuild if moving the snapshot to a different macOS SDK, architecture, or path.
