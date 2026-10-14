@@ -269,6 +269,13 @@ class GMRES
 
 			//	compute fresh defect: b := b - A*x
 				*spR = b;
+				#ifdef UG_PARALLEL
+				// VecScaleAppend above may convert x to additive storage when
+				// combining it with the unique Arnoldi vectors.  Matrix-vector
+				// application requires a consistent input vector.
+				if(!x.change_storage_type(PST_CONSISTENT))
+					UG_THROW("GMRES: Cannot convert updated solution to consistent storage.");
+				#endif
 				linear_operator()->apply_sub(*spR, x);
 
 				if(preconditioner().valid())

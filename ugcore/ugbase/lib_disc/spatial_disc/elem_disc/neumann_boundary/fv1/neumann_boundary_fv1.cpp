@@ -153,6 +153,15 @@ prep_elem_loop(const ReferenceObjectID roid, const int si)
 		this->register_import(m_vNumberData[data].import);
 		m_vNumberData[data].import.set_rhs_part();
 	}
+	for(size_t data = 0; data < m_vVectorData.size(); ++data)
+	{
+		if(!m_vVectorData[data].InnerSSGrp.contains(m_si)) continue;
+		m_vVectorData[data].import.set_fct(id,
+		                                   &m_vVectorData[data],
+		                                   &VectorData::template lin_def<TElem, TFVGeom>);
+		this->register_import(m_vVectorData[data].import);
+		m_vVectorData[data].import.set_rhs_part();
+	}
 }
 
 template<typename TDomain>
@@ -171,6 +180,9 @@ prep_elem(const LocalVector& u, GridObject* elem, const ReferenceObjectID roid, 
 	for(size_t i = 0; i < m_vNumberData.size(); ++i)
 		if(m_vNumberData[i].InnerSSGrp.contains(m_si))
 			m_vNumberData[i].template extract_bip<TElem, TFVGeom>(geo);
+	for(size_t i = 0; i < m_vVectorData.size(); ++i)
+		if(m_vVectorData[i].InnerSSGrp.contains(m_si))
+			m_vVectorData[i].template extract_bip<TElem, TFVGeom>(geo);
 }
 
 template<typename TDomain>
@@ -218,16 +230,15 @@ add_rhs_elem(LocalVector& d, GridObject* elem, const MathVector<dim> vCornerCoor
 // 	vector data
 	for(size_t data = 0; data < m_vVectorData.size(); ++data){
 		if(!m_vVectorData[data].InnerSSGrp.contains(m_si)) continue;
+		size_t ip = 0;
 		for(size_t s = 0; s < m_vVectorData[data].BndSSGrp.size(); ++s){
 			const int si = m_vVectorData[data].BndSSGrp[s];
 			const std::vector<BF>& vBF = geo.bf(si);
 
-			for(size_t i = 0; i < vBF.size(); ++i){
-				MathVector<dim> val;
-				(*m_vVectorData[data].functor)(val, vBF[i].global_ip(), this->time(), si);
-
+			for(size_t i = 0; i < vBF.size(); ++i, ++ip){
 				const int co = vBF[i].node_id();
-				d(_C_, co) -= VecDot(val, vBF[i].normal());
+				d(_C_, co) -= VecDot(m_vVectorData[data].import[ip],
+				                            vBF[i].normal());
 			}
 		}
 	}
@@ -575,6 +586,78 @@ std::vector<MathVector<refDim> >* NeumannBoundaryFV1<TDomain>::NumberData::local
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Vector Data
+////////////////////////////////////////////////////////////////////////////////
+
+template<typename TDomain>
+template<typename TElem, typename TFVGeom>
+void NeumannBoundaryFV1<TDomain>::VectorData::
+lin_def(const LocalVector& u,
+        std::vector<std::vector<MathVector<dim> > > vvvLinDef[],
+        const size_t nip)
+{
+	const static TFVGeom& geo = GeomProvider<TFVGeom>::get();
+	typedef typename TFVGeom::BF BF;
+	for(size_t ip = 0; ip < nip; ++ip)
+		for(size_t c = 0; c < vvvLinDef[ip].size(); ++c)
+			for(size_t sh = 0; sh < vvvLinDef[ip][c].size(); ++sh)
+				VecSet(vvvLinDef[ip][c][sh], 0.0);
+	size_t ip = 0;
+	for(size_t s = 0; s < this->BndSSGrp.size(); ++s)
+	{
+		const int si = this->BndSSGrp[s];
+		const std::vector<BF>& vBF = geo.bf(si);
+		for(size_t i = 0; i < vBF.size(); ++i, ++ip){
+			const int co = vBF[i].node_id();
+			vvvLinDef[ip][_C_][co] -= vBF[i].normal();
+		}
+	}
+}
+
+template<typename TDomain>
+template<typename TElem, typename TFVGeom>
+void NeumannBoundaryFV1<TDomain>::VectorData::extract_bip(const TFVGeom& geo)
+{
+	typedef typename TFVGeom::BF BF;
+	static const int locDim = TElem::dim;
+	std::vector<MathVector<locDim> >* vLocIP = local_ips<locDim>();
+
+	vLocIP->clear();
+	vGloIP.clear();
+	for(size_t s = 0; s < this->BndSSGrp.size(); ++s)
+	{
+		const int si = this->BndSSGrp[s];
+		const std::vector<BF>& vBF = geo.bf(si);
+		for(size_t i = 0; i < vBF.size(); ++i){
+			vLocIP->push_back(vBF[i].local_ip());
+			vGloIP.push_back(vBF[i].global_ip());
+		}
+	}
+
+	if(vLocIP->empty()){
+		import.template set_local_ips<locDim>(NULL, 0);
+		import.set_global_ips(NULL, 0);
+	}
+	else{
+		import.template set_local_ips<locDim>(&(*vLocIP)[0], vLocIP->size());
+		import.set_global_ips(&vGloIP[0], vGloIP.size());
+	}
+}
+
+template<typename TDomain>
+template <int refDim>
+std::vector<MathVector<refDim> >* NeumannBoundaryFV1<TDomain>::VectorData::local_ips()
+{
+	switch (refDim)
+	{
+		case 1: return (std::vector<MathVector<refDim> >*)(&vLocIP_dim1);
+		case 2: return (std::vector<MathVector<refDim> >*)(&vLocIP_dim2);
+		case 3: return (std::vector<MathVector<refDim> >*)(&vLocIP_dim3);
+	}
+	return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 //	register assemble functions
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -655,4 +738,3 @@ template class NeumannBoundaryFV1<Domain3d>;
 #endif
 
 } // namespace ug
-

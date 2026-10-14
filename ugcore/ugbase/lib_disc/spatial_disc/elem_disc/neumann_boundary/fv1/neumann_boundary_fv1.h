@@ -119,13 +119,30 @@ class NeumannBoundaryFV1
 		};
 
 	///	Unconditional vector user data
-		struct VectorData : public base_type::Data
+	struct VectorData : public base_type::Data
 		{
-			VectorData(SmartPtr<CplUserData<MathVector<dim>, dim> > functor_,
+			VectorData(SmartPtr<CplUserData<MathVector<dim>, dim> > data,
 			           std::string BndSubsets, std::string InnerSubsets)
-			: base_type::Data(BndSubsets, InnerSubsets), functor(functor_) {}
+			: base_type::Data(BndSubsets, InnerSubsets), functor(data)
+			{ import.set_data(data); }
+
+			template<typename TElem, typename TFVGeom>
+			void extract_bip(const TFVGeom& geo);
+
+			template <typename TElem, typename TFVGeom>
+			void lin_def(const LocalVector& u,
+			             std::vector<std::vector<MathVector<dim> > > vvvLinDef[],
+			             const size_t nip);
+
+			template <int refDim>
+			std::vector<MathVector<refDim> >* local_ips();
 
 			SmartPtr<CplUserData<MathVector<dim>, dim> > functor;
+			DataImport<MathVector<dim>, dim> import;
+			std::vector<MathVector<3> > vLocIP_dim3;
+			std::vector<MathVector<2> > vLocIP_dim2;
+			std::vector<MathVector<1> > vLocIP_dim1;
+			std::vector<MathVector<dim> > vGloIP;
 		};
 
 		std::vector<NumberData> m_vNumberData;
