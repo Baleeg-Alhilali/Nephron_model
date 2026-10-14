@@ -6,7 +6,5 @@ CXX_DEFINES = -DBLAS_AVAILABLE -DBOOST_ALL_NO_LIB -DBOOST_UBLAS_NDEBUG -DLAPACK_
 
 CXX_INCLUDES = -I/Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase -I/Users/alhilaba/UG4_promesh_ogrid/build -I/opt/homebrew/Cellar/open-mpi/5.0.9/include -isystem /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../externals/BoostForUG4
 
-CXX_FLAGSarm64 = -O3 -DNDEBUG -std=c++11 -arch arm64
-
-CXX_FLAGS = -O3 -DNDEBUG -std=c++11 -arch arm64
+CXX_FLAGS = -O3 -DNDEBUG -std=c++11
 

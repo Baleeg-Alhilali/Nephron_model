@@ -867,6 +867,54 @@ neuro_collection_plugin.cpp.s:
 	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/neuro_collection_plugin.cpp.s
 .PHONY : neuro_collection_plugin.cpp.s
 
+pressure_continuity_fv1.o: pressure_continuity_fv1.cpp.o
+.PHONY : pressure_continuity_fv1.o
+
+# target to build an object file
+pressure_continuity_fv1.cpp.o:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/pressure_continuity_fv1.cpp.o
+.PHONY : pressure_continuity_fv1.cpp.o
+
+pressure_continuity_fv1.i: pressure_continuity_fv1.cpp.i
+.PHONY : pressure_continuity_fv1.i
+
+# target to preprocess a source file
+pressure_continuity_fv1.cpp.i:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/pressure_continuity_fv1.cpp.i
+.PHONY : pressure_continuity_fv1.cpp.i
+
+pressure_continuity_fv1.s: pressure_continuity_fv1.cpp.s
+.PHONY : pressure_continuity_fv1.s
+
+# target to generate assembly for a file
+pressure_continuity_fv1.cpp.s:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/pressure_continuity_fv1.cpp.s
+.PHONY : pressure_continuity_fv1.cpp.s
+
+pressure_trace_constraint.o: pressure_trace_constraint.cpp.o
+.PHONY : pressure_trace_constraint.o
+
+# target to build an object file
+pressure_trace_constraint.cpp.o:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/pressure_trace_constraint.cpp.o
+.PHONY : pressure_trace_constraint.cpp.o
+
+pressure_trace_constraint.i: pressure_trace_constraint.cpp.i
+.PHONY : pressure_trace_constraint.i
+
+# target to preprocess a source file
+pressure_trace_constraint.cpp.i:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/pressure_trace_constraint.cpp.i
+.PHONY : pressure_trace_constraint.cpp.i
+
+pressure_trace_constraint.s: pressure_trace_constraint.cpp.s
+.PHONY : pressure_trace_constraint.s
+
+# target to generate assembly for a file
+pressure_trace_constraint.cpp.s:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/pressure_trace_constraint.cpp.s
+.PHONY : pressure_trace_constraint.cpp.s
+
 stimulation/action_potential_train.o: stimulation/action_potential_train.cpp.o
 .PHONY : stimulation/action_potential_train.o
 
@@ -1278,6 +1326,12 @@ help:
 	@echo "... neuro_collection_plugin.o"
 	@echo "... neuro_collection_plugin.i"
 	@echo "... neuro_collection_plugin.s"
+	@echo "... pressure_continuity_fv1.o"
+	@echo "... pressure_continuity_fv1.i"
+	@echo "... pressure_continuity_fv1.s"
+	@echo "... pressure_trace_constraint.o"
+	@echo "... pressure_trace_constraint.i"
+	@echo "... pressure_trace_constraint.s"
 	@echo "... stimulation/action_potential_train.o"
 	@echo "... stimulation/action_potential_train.i"
 	@echo "... stimulation/action_potential_train.s"

@@ -1874,6 +1874,13 @@ ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/neuro_collection
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/reference_element/reference_element_util.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/membrane_transporter_interface.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/user_flux_bnd_fv1.h \
+  /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/pressure_continuity_fv1.h \
+  /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/pressure_trace_constraint.h \
+  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/spatial_disc/constraints/constraint_interface.h \
+  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/assemble_interface.h \
+  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/spatial_disc/ass_tuner.h \
+  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/spatial_disc/local_to_global/local_to_global_mapper.h \
+  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/spatial_disc/ass_tuner_impl.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/hh.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/hh_charges.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/hh_species.h \
@@ -1881,11 +1888,6 @@ ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/neuro_collection
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/ip3r.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/ryr.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/ryr_discrete.h \
-  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/spatial_disc/constraints/constraint_interface.h \
-  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/assemble_interface.h \
-  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/spatial_disc/ass_tuner.h \
-  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/spatial_disc/local_to_global/local_to_global_mapper.h \
-  /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_disc/spatial_disc/ass_tuner_impl.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/ryr_implicit.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/ryr_implicit_impl.h \
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase/lib_grid/algorithms/debug_util.h \

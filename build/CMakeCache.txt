@@ -789,7 +789,7 @@ SuperLU_SOURCE_DIR:STATIC=/Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/ext
 // libug4, vrl, vrlgrid, libgrid, gridshell, ugplugin, amg, luashell
 TARGET:STRING=ugshell
 
-//Set from FindBLAS.cmake BLAS_LIBRARIES.
+//List of absolute paths to blas libraries [].
 TPL_BLAS_LIBRARIES:FILEPATH=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Accelerate.framework
 
 //Build the CBLAS library

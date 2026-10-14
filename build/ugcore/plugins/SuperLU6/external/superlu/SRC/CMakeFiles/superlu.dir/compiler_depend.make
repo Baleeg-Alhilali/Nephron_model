@@ -2244,7 +2244,8 @@ ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/dmemory.c.o:
   /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/superlu_enum_consts.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/supermatrix.h
 
-ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/dmyblas2.c.o: /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/dmyblas2.c
+ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/dmyblas2.c.o: /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/dmyblas2.c \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json
 
 ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/dpanel_bmod.c.o: /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/dpanel_bmod.c \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json \
@@ -5319,6 +5320,7 @@ ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/memory.c.o: 
   /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/supermatrix.h
 
 ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/mmd.c.o: /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/mmd.c \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/superlu_config.h
 
 ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/qselect.c.o: /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/qselect.c \
@@ -5658,6 +5660,7 @@ ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/sp_coletree.
   /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/supermatrix.h
 
 ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/sp_ienv.c.o: /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/sp_ienv.c \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/slu_Cnames.h
 
 ugcore/plugins/SuperLU6/external/superlu/SRC/CMakeFiles/superlu.dir/sp_preorder.c.o: /Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC/sp_preorder.c \

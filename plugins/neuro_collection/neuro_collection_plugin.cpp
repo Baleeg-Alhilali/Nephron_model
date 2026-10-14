@@ -58,6 +58,8 @@
 #include "buffer_fv1.h"
 #include "membrane_transport_fv1.h"
 #include "user_flux_bnd_fv1.h"
+#include "pressure_continuity_fv1.h"
+#include "pressure_trace_constraint.h"
 #include "membrane_transporters/membrane_transporter_interface.h"
 #include "membrane_transporters/hh.h"
 #include "membrane_transporters/hh_charges.h"
@@ -153,6 +155,20 @@ static void DomainAlgebra(Registry& reg, string grp)
 	string tag = GetDomainAlgebraTag<TDomain,TAlgebra>();
 
 	typedef GridFunction<TDomain, TAlgebra> TGridFunction;
+
+	// Exact scaled pressure-trace continuity without a multiplier unknown.
+	{
+		typedef PressureTraceConstraint<TDomain, TAlgebra> T;
+		typedef IDomainConstraint<TDomain, TAlgebra> TBase;
+		string name = string("PressureTraceConstraint").append(suffix);
+		reg.add_class_<T, TBase>(name, grp)
+			.template add_constructor<void (*)(const char*, const char*, const char*)>(
+				"Stokes pressure#stored Darcy pressure#interface subset")
+			.add_method("set_pressure_scale", &T::set_pressure_scale,
+				"", "scale", "Physical Darcy pressure per stored pressure.")
+			.set_construct_as_smart_pointer(true);
+		reg.add_class_to_group(name, "PressureTraceConstraint", tag);
+	}
 
 	// extra commands for this plugin
 	reg.add_function("take_measurement", static_cast<number (*)(SmartPtr<TGridFunction>, const number, const char*, const char*, const char*)>(&takeMeasurement<GridFunction<TDomain, TAlgebra> >), grp.c_str(),
@@ -428,6 +444,26 @@ static void Domain(Registry& reg, string grp)
 #endif
 			.set_construct_as_smart_pointer(true);
 		reg.add_class_to_group(name, "UserFluxBoundaryFV1", tag);
+	}
+
+	// exact pressure-trace continuity for monolithic Stokes--Darcy FV1
+	{
+		typedef PressureContinuityFV1<TDomain> T;
+		typedef IElemDisc<TDomain> TBase;
+		string name = string("PressureContinuityFV1").append(suffix);
+		reg.add_class_<T, TBase>(name, grp)
+			.template add_constructor<void (*)(const char*, const char*)>(
+				"Functions: p_stokes,p_darcy_stored,lambda#Interface subset(s)")
+			.add_method("set_pressure_scale", &T::set_pressure_scale,
+				"", "scale", "Physical Darcy pressure per stored pressure.")
+			.add_method("set_multiplier_regularization",
+				&T::set_multiplier_regularization, "", "epsilon",
+				"Non-negative interface multiplier stabilization.")
+			.add_method("set_augmented_lagrangian",
+				&T::set_augmented_lagrangian, "", "gamma",
+				"Non-negative exact-constraint augmentation coefficient.")
+			.set_construct_as_smart_pointer(true);
+		reg.add_class_to_group(name, "PressureContinuityFV1", tag);
 	}
 
 	// Hodgkin-Huxley channels

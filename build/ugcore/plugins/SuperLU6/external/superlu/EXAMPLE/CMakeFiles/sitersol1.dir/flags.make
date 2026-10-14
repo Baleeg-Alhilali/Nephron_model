@@ -6,7 +6,5 @@ C_DEFINES = -DBLAS_AVAILABLE -DBOOST_ALL_NO_LIB -DBOOST_UBLAS_NDEBUG -DBUILDING_
 
 C_INCLUDES = -I/Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../ugcore/ugbase -I/Users/alhilaba/UG4_promesh_ogrid/build -I/opt/homebrew/Cellar/open-mpi/5.0.9/include -I/Users/alhilaba/UG4_promesh_ogrid/build/SRC -I/Users/alhilaba/UG4_promesh_ogrid/plugins/SuperLU6/external/superlu/SRC -isystem /Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/../../externals/BoostForUG4
 
-C_FLAGSarm64 = -DUSE_VENDOR_BLAS  -O3 -DNDEBUG -std=c99 -arch arm64
-
-C_FLAGS = -DUSE_VENDOR_BLAS  -O3 -DNDEBUG -std=c99 -arch arm64
+C_FLAGS = -DUSE_VENDOR_BLAS  -O3 -DNDEBUG -std=c99
 

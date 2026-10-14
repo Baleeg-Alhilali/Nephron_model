@@ -174278,7 +174278,8 @@ ugcore/CMakeFiles/ug4.dir/ugbase/common/util/message_hub.cpp.o: /Users/alhilaba/
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/message_hub.h \
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/message_hub_impl.hpp
 
-ugcore/CMakeFiles/ug4.dir/ugbase/common/util/number_util.cpp.o: /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/number_util.cpp
+ugcore/CMakeFiles/ug4.dir/ugbase/common/util/number_util.cpp.o: /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/number_util.cpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json
 
 ugcore/CMakeFiles/ug4.dir/ugbase/common/util/os_dependent_impl/dynamic_library_util_unix.cpp.o: /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/os_dependent_impl/dynamic_library_util_unix.cpp \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json \
@@ -175790,6 +175791,7 @@ ugcore/CMakeFiles/ug4.dir/ugbase/common/util/os_dependent_impl/file_util_posix.c
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/file_util.h
 
 ugcore/CMakeFiles/ug4.dir/ugbase/common/util/os_dependent_impl/os_info_osx.cpp.o: /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/os_dependent_impl/os_info_osx.cpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json \
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/ug_config.h \
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/os_info.h
 
@@ -179409,6 +179411,7 @@ ugcore/CMakeFiles/ug4.dir/ugbase/common/util/variant.cpp.o: /Users/alhilaba/UG4_
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/util/variant.h
 
 ugcore/CMakeFiles/ug4.dir/ugbase/compile_info/compile_info.cpp.o: /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/compile_info/compile_info.cpp \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json \
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/ug_config.h \
   /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/compile_info/compile_info.h
 

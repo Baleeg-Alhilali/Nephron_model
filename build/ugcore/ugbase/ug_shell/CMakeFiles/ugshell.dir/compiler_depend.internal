@@ -1218,6 +1218,7 @@ ugcore/ugbase/ug_shell/CMakeFiles/ugshell.dir/externals/linenoise/linenoise.cpp.
 
 ugcore/ugbase/ug_shell/CMakeFiles/ugshell.dir/main.cpp.o
  /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/ug_shell/main.cpp
+ /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/SDKSettings.json
  /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/ug_config.h
  /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/ug_shell/ugshell_main.h
 

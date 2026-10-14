@@ -65,6 +65,8 @@ message(STATUS "      Testsuite:   " ${NCTestsuite} " (options are: ON, OFF)")
 set(SOURCES neuro_collection_plugin.cpp
             buffer_fv1.cpp
             user_flux_bnd_fv1.cpp
+            pressure_continuity_fv1.cpp
+            pressure_trace_constraint.cpp
             membrane_transport_fv1.cpp
             membrane_transporters/membrane_transporter_interface.cpp
             membrane_transporters/hh.cpp
@@ -184,4 +186,3 @@ else(buildEmbeddedPlugins)
 		target_link_libraries (NCTestsuite ${pluginName} ug4)
 	endif(${NCTestsuite} STREQUAL "ON")
 endif(buildEmbeddedPlugins)
-
