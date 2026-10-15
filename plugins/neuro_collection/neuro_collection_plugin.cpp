@@ -466,6 +466,7 @@ static void Domain(Registry& reg, string grp)
 		reg.add_class_to_group(name, "PressureContinuityFV1", tag);
 	}
 
+
 	// Hodgkin-Huxley channels
 	{
 		typedef HH<TDomain> T;

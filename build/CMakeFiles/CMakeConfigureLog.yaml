@@ -7075,3 +7075,237 @@ events:
         
       exitCode: 0
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1447 (try_compile)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1491 (_MPI_try_staged_settings)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1814 (_MPI_check_lang_works)"
+      - "ugcore/cmake/ug/mpi.cmake:39 (find_package)"
+      - "ugcore/cmake/ug_includes.cmake:537 (include)"
+      - "ugcore/CMakeLists.txt:46 (include)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-YTtYDn"
+      binary: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-YTtYDn"
+    cmakeVariables:
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_C_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/modules"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-YTtYDn'
+        
+        Run Build Command(s): /Applications/CMake.app/Contents/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_1241f/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_1241f.dir/build.make CMakeFiles/cmTC_1241f.dir/build
+        Building C object CMakeFiles/cmTC_1241f.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /opt/homebrew/Cellar/open-mpi/5.0.9/include  -MD -MT CMakeFiles/cmTC_1241f.dir/test_mpi.c.o -MF CMakeFiles/cmTC_1241f.dir/test_mpi.c.o.d -o CMakeFiles/cmTC_1241f.dir/test_mpi.c.o -c /Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-YTtYDn/test_mpi.c
+        Linking C executable cmTC_1241f
+        /Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1241f.dir/link.txt --verbose=1
+        /usr/bin/cc -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_1241f.dir/test_mpi.c.o -o cmTC_1241f  /opt/homebrew/Cellar/open-mpi/5.0.9/lib/libmpi.dylib
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1447 (try_compile)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1491 (_MPI_try_staged_settings)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1814 (_MPI_check_lang_works)"
+      - "ugcore/cmake/ug/mpi.cmake:39 (find_package)"
+      - "ugcore/cmake/ug_includes.cmake:537 (include)"
+      - "ugcore/CMakeLists.txt:46 (include)"
+    description: "The MPI test test_mpi for CXX in mode normal"
+    directories:
+      source: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-J09hHX"
+      binary: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-J09hHX"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/modules"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "MPI_RESULT_CXX_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-J09hHX'
+        
+        Run Build Command(s): /Applications/CMake.app/Contents/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_ddd04/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_ddd04.dir/build.make CMakeFiles/cmTC_ddd04.dir/build
+        Building CXX object CMakeFiles/cmTC_ddd04.dir/test_mpi.cpp.o
+        /usr/bin/c++  -isystem /opt/homebrew/Cellar/open-mpi/5.0.9/include -std=c++11 -MD -MT CMakeFiles/cmTC_ddd04.dir/test_mpi.cpp.o -MF CMakeFiles/cmTC_ddd04.dir/test_mpi.cpp.o.d -o CMakeFiles/cmTC_ddd04.dir/test_mpi.cpp.o -c /Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-J09hHX/test_mpi.cpp
+        Linking CXX executable cmTC_ddd04
+        /Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ddd04.dir/link.txt --verbose=1
+        /usr/bin/c++ -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_ddd04.dir/test_mpi.cpp.o -o cmTC_ddd04  /opt/homebrew/Cellar/open-mpi/5.0.9/lib/libmpi.dylib
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1447 (try_compile)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1841 (_MPI_try_staged_settings)"
+      - "ugcore/cmake/ug/mpi.cmake:39 (find_package)"
+      - "ugcore/cmake/ug_includes.cmake:537 (include)"
+      - "ugcore/CMakeLists.txt:46 (include)"
+    description: "The MPI test test_mpi for CXX in mode MPICXX"
+    directories:
+      source: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-CfHLqN"
+      binary: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-CfHLqN"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/modules"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "MPI_RESULT_CXX_test_mpi_MPICXX"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-CfHLqN'
+        
+        Run Build Command(s): /Applications/CMake.app/Contents/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_e63de/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_e63de.dir/build.make CMakeFiles/cmTC_e63de.dir/build
+        Building CXX object CMakeFiles/cmTC_e63de.dir/test_mpi.cpp.o
+        /usr/bin/c++  -isystem /opt/homebrew/Cellar/open-mpi/5.0.9/include -std=c++11 -MD -MT CMakeFiles/cmTC_e63de.dir/test_mpi.cpp.o -MF CMakeFiles/cmTC_e63de.dir/test_mpi.cpp.o.d -o CMakeFiles/cmTC_e63de.dir/test_mpi.cpp.o -c /Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-CfHLqN/test_mpi.cpp
+        Linking CXX executable cmTC_e63de
+        /Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e63de.dir/link.txt --verbose=1
+        /usr/bin/c++ -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_e63de.dir/test_mpi.cpp.o -o cmTC_e63de  /opt/homebrew/Cellar/open-mpi/5.0.9/lib/libmpi.dylib
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1447 (try_compile)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1491 (_MPI_try_staged_settings)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1814 (_MPI_check_lang_works)"
+      - "ugcore/cmake/ug/mpi.cmake:39 (find_package)"
+      - "ugcore/cmake/ug_includes.cmake:537 (include)"
+      - "ugcore/CMakeLists.txt:46 (include)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-TgepCK"
+      binary: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-TgepCK"
+    cmakeVariables:
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_C_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/modules"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-TgepCK'
+        
+        Run Build Command(s): /Applications/CMake.app/Contents/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_3d311/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_3d311.dir/build.make CMakeFiles/cmTC_3d311.dir/build
+        Building C object CMakeFiles/cmTC_3d311.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /opt/homebrew/Cellar/open-mpi/5.0.9/include  -MD -MT CMakeFiles/cmTC_3d311.dir/test_mpi.c.o -MF CMakeFiles/cmTC_3d311.dir/test_mpi.c.o.d -o CMakeFiles/cmTC_3d311.dir/test_mpi.c.o -c /Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-TgepCK/test_mpi.c
+        Linking C executable cmTC_3d311
+        /Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3d311.dir/link.txt --verbose=1
+        /usr/bin/cc -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_3d311.dir/test_mpi.c.o -o cmTC_3d311  /opt/homebrew/Cellar/open-mpi/5.0.9/lib/libmpi.dylib
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1447 (try_compile)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1491 (_MPI_try_staged_settings)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1814 (_MPI_check_lang_works)"
+      - "ugcore/cmake/ug/mpi.cmake:39 (find_package)"
+      - "ugcore/cmake/ug_includes.cmake:537 (include)"
+      - "ugcore/CMakeLists.txt:46 (include)"
+    description: "The MPI test test_mpi for CXX in mode normal"
+    directories:
+      source: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-XwMWUt"
+      binary: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-XwMWUt"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/modules"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "MPI_RESULT_CXX_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-XwMWUt'
+        
+        Run Build Command(s): /Applications/CMake.app/Contents/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_a6bde/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_a6bde.dir/build.make CMakeFiles/cmTC_a6bde.dir/build
+        Building CXX object CMakeFiles/cmTC_a6bde.dir/test_mpi.cpp.o
+        /usr/bin/c++  -isystem /opt/homebrew/Cellar/open-mpi/5.0.9/include -std=c++11 -MD -MT CMakeFiles/cmTC_a6bde.dir/test_mpi.cpp.o -MF CMakeFiles/cmTC_a6bde.dir/test_mpi.cpp.o.d -o CMakeFiles/cmTC_a6bde.dir/test_mpi.cpp.o -c /Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-XwMWUt/test_mpi.cpp
+        Linking CXX executable cmTC_a6bde
+        /Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a6bde.dir/link.txt --verbose=1
+        /usr/bin/c++ -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_a6bde.dir/test_mpi.cpp.o -o cmTC_a6bde  /opt/homebrew/Cellar/open-mpi/5.0.9/lib/libmpi.dylib
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1447 (try_compile)"
+      - "/Applications/CMake.app/Contents/share/cmake-4.3/Modules/FindMPI.cmake:1841 (_MPI_try_staged_settings)"
+      - "ugcore/cmake/ug/mpi.cmake:39 (find_package)"
+      - "ugcore/cmake/ug_includes.cmake:537 (include)"
+      - "ugcore/CMakeLists.txt:46 (include)"
+    description: "The MPI test test_mpi for CXX in mode MPICXX"
+    directories:
+      source: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-O9IDHf"
+      binary: "/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-O9IDHf"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
+      CMAKE_CXX_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/alhilaba/UG4_promesh_ogrid/ugcore/cmake/modules"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "MPI_RESULT_CXX_test_mpi_MPICXX"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-O9IDHf'
+        
+        Run Build Command(s): /Applications/CMake.app/Contents/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_3a01c/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_3a01c.dir/build.make CMakeFiles/cmTC_3a01c.dir/build
+        Building CXX object CMakeFiles/cmTC_3a01c.dir/test_mpi.cpp.o
+        /usr/bin/c++  -isystem /opt/homebrew/Cellar/open-mpi/5.0.9/include -std=c++11 -MD -MT CMakeFiles/cmTC_3a01c.dir/test_mpi.cpp.o -MF CMakeFiles/cmTC_3a01c.dir/test_mpi.cpp.o.d -o CMakeFiles/cmTC_3a01c.dir/test_mpi.cpp.o -c /Users/alhilaba/UG4_promesh_ogrid/build/CMakeFiles/CMakeScratch/TryCompile-O9IDHf/test_mpi.cpp
+        Linking CXX executable cmTC_3a01c
+        /Applications/CMake.app/Contents/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3a01c.dir/link.txt --verbose=1
+        /usr/bin/c++ -Wl,-search_paths_first -Wl,-headerpad_max_install_names -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_3a01c.dir/test_mpi.cpp.o -o cmTC_3a01c  /opt/homebrew/Cellar/open-mpi/5.0.9/lib/libmpi.dylib
+        
+      exitCode: 0
+...
