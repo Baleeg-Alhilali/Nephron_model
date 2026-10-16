@@ -1784,6 +1784,70 @@ number NeuriteProjector::push_into_place(Vertex* vrt, const IVertexGroup* parent
 	// vector for new position
 	vector3 pos(position(vrt));
 
+	// Preserve flat terminal caps during refinement.  Open nephron terminals
+	// can be snapped to an axis-aligned OuterWall plane even though the fitted
+	// spline endpoint lies slightly inside that plane.  Projecting a new cap
+	// edge/face vertex only through pos_in_neurite would therefore pull the new
+	// vertex off the cap while leaving inherited coarse vertices in place.  The
+	// result is the characteristic tooth-shaped first cell layer.
+	//
+	// A parent belongs to a terminal cap precisely when all of its vertices
+	// carry the same terminal axial parameter.  The dominant component of the
+	// centerline tangent identifies the normal of the axis-aligned terminal
+	// plane.  Remember that plane here and restore it after the ordinary
+	// neurite projection.  Surface-parameter interpolation is left untouched,
+	// so subsequent refinement levels remain projector-compatible.
+	bool preserveTerminalPlane = false;
+	size_t terminalPlaneAxis = 0;
+	number terminalPlaneCoordinate = 0.0;
+	if (parent && (std::fabs(t) < 1e-7 || std::fabs(t - 1.0) < 1e-7))
+	{
+		const number terminalT = t < 0.5 ? 0.0 : 1.0;
+		preserveTerminalPlane = true;
+		for (size_t i = 0; i < parent->num_vertices(); ++i)
+		{
+			const SurfaceParams& parentParams =
+				m_aaSurfParams[parent->vertex(i)];
+			const uint32_t parentNID =
+				(parentParams.neuriteID << 12) >> 12;
+			if (parentNID != plainNID ||
+			    std::fabs(parentParams.axial - terminalT) >= 1e-7)
+			{
+				preserveTerminalPlane = false;
+				break;
+			}
+		}
+
+		if (preserveTerminalPlane)
+		{
+			vector3 tangent;
+			const Section& terminalSection =
+				*get_section_iterator(plainNID, t);
+			const number terminalSectionEnd = terminalSection.endParam;
+			const number* spline[3] = {
+				&terminalSection.splineParamsX[0],
+				&terminalSection.splineParamsY[0],
+				&terminalSection.splineParamsZ[0]
+			};
+			for (size_t d = 0; d < 3; ++d)
+			{
+				tangent[d] = -3.0 * spline[d][0]
+					* (terminalSectionEnd - t) - 2.0 * spline[d][1];
+				tangent[d] = tangent[d] * (terminalSectionEnd - t)
+					- spline[d][2];
+			}
+			for (size_t d = 1; d < 3; ++d)
+				if (std::fabs(tangent[d]) >
+				    std::fabs(tangent[terminalPlaneAxis]))
+					terminalPlaneAxis = d;
+
+			for (size_t i = 0; i < parent->num_vertices(); ++i)
+				terminalPlaneCoordinate +=
+					position(parent->vertex(i))[terminalPlaneAxis];
+			terminalPlaneCoordinate /= parent->num_vertices();
+		}
+	}
+
 	// FIVE CASES can occur:
 	// 1. We are at a branching point.
 	// 2. We are at a soma branching point
@@ -1868,6 +1932,9 @@ number NeuriteProjector::push_into_place(Vertex* vrt, const IVertexGroup* parent
 	{
 		pos_on_surface_tip(pos, neurite, parent, this, rad);
 	}
+
+	if (preserveTerminalPlane)
+		pos[terminalPlaneAxis] = terminalPlaneCoordinate;
 
 	// save new surface params for new vertex
 	m_aaSurfParams[vrt].neuriteID = neuriteID;

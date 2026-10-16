@@ -215,8 +215,7 @@ static void snap_refined_terminal_vertices_to_outer_wall
 {
 	if (!metadata.terminalsOnOuterWall) return;
 	const int outerWallSubset = (int)(6 * nephronCount);
-	const int tripleJunctionBase = outerWallSubset + 2;
-	const int membraneWallBase = tripleJunctionBase + (int)nephronCount;
+	const int membraneWallBase = outerWallSubset + 2;
 	number diagonal = 0.0;
 	for (size_t d = 0; d < 3; ++d)
 		diagonal += (metadata.boxMax[d] - metadata.boxMin[d])
@@ -233,8 +232,6 @@ static void snap_refined_terminal_vertices_to_outer_wall
 		const int si = sh.get_subset_index(vertex);
 		const bool capVertex = si >= 0 && si < outerWallSubset
 			&& (si % 6 == 4 || si % 6 == 5);
-		const bool rimVertex = si >= tripleJunctionBase
-			&& si < tripleJunctionBase + (int)nephronCount;
 		const bool membraneWallVertex = si >= membraneWallBase
 			&& si < membraneWallBase + (int)nephronCount;
 		// The terminal membrane annulus belongs to the Membrane subset rather
@@ -243,13 +240,13 @@ static void snap_refined_terminal_vertices_to_outer_wall
 		// the (slightly unsnapped) fitted spline endpoint, which can collapse
 		// the first membrane cells for coarse angular O-grids.
 		const bool nephronVertex = si >= 0 && si < outerWallSubset;
-		const bool projectorVertex = nephronVertex || rimVertex || membraneWallVertex;
+		const bool projectorVertex = nephronVertex || membraneWallVertex;
 		const number axial = projectorVertex ? aaSurfParams[vertex].axial : 0.5;
 		const number radial = projectorVertex ? aaSurfParams[vertex].radial : 0.0;
 		const bool terminalParamVertex = projectorVertex
 			&& radial > 1e-10
 			&& (std::fabs(axial) < 1e-10 || std::fabs(axial - 1.0) < 1e-10);
-		if (!capVertex && !rimVertex && !membraneWallVertex &&
+		if (!capVertex && !membraneWallVertex &&
 		    !terminalParamVertex) continue;
 		number nearestDistance = std::numeric_limits<number>::max();
 		size_t nearestAxis = 0;
@@ -272,7 +269,7 @@ static void snap_refined_terminal_vertices_to_outer_wall
 		// strict because every one of those vertices must lie on that plane.
 		if (nearestDistance > maximumSnapDistance)
 		{
-			UG_COND_THROW(capVertex || rimVertex || membraneWallVertex,
+			UG_COND_THROW(capVertex || membraneWallVertex,
 			              "Refined terminal vertex is too far from every OuterWall plane.");
 			continue;
 		}
@@ -281,7 +278,7 @@ static void snap_refined_terminal_vertices_to_outer_wall
 		++snapped;
 	}
 	UG_LOGN("Refinement level " << refinementLevel << ": snapped " << snapped
-	        << " Inlet/Outlet/TripleJunction/MembraneWall vertices to "
+	        << " Inlet/Outlet/MembraneWall vertices to "
 	        << "OuterWall planes.");
 }
 
@@ -6222,17 +6219,17 @@ static size_t assign_indexed_nephron_subsets
 	 *   6*i+3 Apical_i
 	 *   6*i+4 Inlet_i
 	 *   6*i+5 Outlet_i
-	 * followed by one shared OuterWall, one shared Inter, one
-	 * TripleJunction_i subset per nephron, and one MembraneWall_i subset per
-	 * nephron for the planar membrane annulus touching the OuterWall.
+	 * followed by one shared OuterWall, one shared Inter, and one
+	 * MembraneWall_i subset per nephron for the planar membrane annulus and
+	 * terminal cap rim touching the OuterWall.
 	 *
 	 * Lumen boundary faces that are not Apical are terminal caps. Their mean
 	 * npSurfParams.axial value distinguishes the root/low-axial Inlet from the
 	 * terminal/high-axial Outlet. Cap faces and their interior vertices receive
 	 * the cap subset. Edges and vertices on the shared outer circular rim receive
-	 * a dedicated TripleJunction subset. The same NeuriteProjector is attached to
-	 * that subset, keeping refinement conforming without classifying the
-	 * Inter-touching rim as part of the Apical transport interface.
+	 * MembraneWall. The same NeuriteProjector is attached to that subset, keeping
+	 * refinement conforming without classifying the terminal rim as part of the
+	 * Apical transport interface.
 	 *
 	 * The order of disconnected components follows the order in which root trees
 	 * were generated from the merged SWC, which is the -swc1, -swc2, ... order.
@@ -6285,8 +6282,7 @@ static size_t assign_indexed_nephron_subsets
 
 	const int outerWallSubset = (int)(6 * expectedNephrons);
 	const int interSubset = outerWallSubset + 1;
-	const int tripleJunctionBase = interSubset + 1;
-	const int membraneWallBase = tripleJunctionBase + (int)expectedNephrons;
+	const int membraneWallBase = interSubset + 1;
 
 	std::vector<Volume*> originalInterVolumes;
 	for (VolumeIterator it = g.begin<Volume>(); it != g.end<Volume>(); ++it)
@@ -6680,20 +6676,20 @@ static size_t assign_indexed_nephron_subsets
 			}
 			if (fallbackSI < 0) fallbackSI = faceSI;
 		}
-		// An edge shared by an Apical face and an Inlet/Outlet cap is the
-		// three-domain endpoint rim. Keep it separate from the physical Apical
-		// interface while retaining a deterministic projector-aware subset.
-		int tripleJunctionSI = -1;
+		// An edge shared by an Apical face and an Inlet/Outlet cap belongs to
+		// MembraneWall. The terminals now meet the OuterWall, so a separate
+		// TripleJunction subset is neither geometrically nor physically needed.
+		int terminalRimSI = -1;
 		if (apicalSI >= 0 && capSI >= 0)
 		{
 			UG_COND_THROW(apicalSI / 6 != capSI / 6,
 			              "Terminal rim joins subsets from different nephrons.");
-			tripleJunctionSI = tripleJunctionBase + apicalSI / 6;
+			terminalRimSI = membraneWallBase + apicalSI / 6;
 		}
 
 		// Do not let iteration order decide the edge subset. In particular,
 		// Basolateral/OuterWall used to win before a later cap face was seen.
-		const int newSI = tripleJunctionSI >= 0 ? tripleJunctionSI :
+		const int newSI = terminalRimSI >= 0 ? terminalRimSI :
 		                  apicalSI >= 0 ? apicalSI :
 		                  capSI >= 0 ? capSI :
 		                  membraneWallSI >= 0 ? membraneWallSI :
@@ -6711,7 +6707,6 @@ static size_t assign_indexed_nephron_subsets
 		int apicalSI = -1;
 		int basolateralSI = -1;
 		int membraneWallSI = -1;
-		int tripleJunctionSI = -1;
 		Grid::traits<Edge>::secure_container edges;
 		g.associated_elements(edges, vertex);
 		for (size_t i = 0; i < edges.size(); ++i)
@@ -6721,15 +6716,6 @@ static size_t assign_indexed_nephron_subsets
 			    edgeSI < membraneWallBase + (int)expectedNephrons)
 			{
 				membraneWallSI = edgeSI;
-				continue;
-			}
-			if (edgeSI >= tripleJunctionBase &&
-			    edgeSI < tripleJunctionBase + (int)expectedNephrons)
-			{
-				UG_COND_THROW(tripleJunctionSI >= 0 &&
-				              tripleJunctionSI != edgeSI,
-				              "Vertex belongs to TripleJunction rims of different nephrons.");
-				tripleJunctionSI = edgeSI;
 				continue;
 			}
 			const int role = edgeSI >= 0 && edgeSI < outerWallSubset
@@ -6766,10 +6752,9 @@ static size_t assign_indexed_nephron_subsets
 			}
 			if (fallbackSI < 0) fallbackSI = edgeSI;
 		}
-		const int newSI = tripleJunctionSI >= 0 ? tripleJunctionSI :
+		const int newSI = membraneWallSI >= 0 ? membraneWallSI :
 		                  apicalSI >= 0 ? apicalSI :
 		                  capSI >= 0 ? capSI :
-		                  membraneWallSI >= 0 ? membraneWallSI :
 		                  basolateralSI >= 0 ? basolateralSI :
 		                  boundarySI >= 0 ? boundarySI : fallbackSI;
 		if (newSI >= 0) sh.assign_subset(vertex, newSI);
@@ -6812,15 +6797,15 @@ static size_t assign_indexed_nephron_subsets
 		sh.assign_subset(edge->vertex(1), basolateralSubset);
 	}
 
-	// Validate the cap closure before serialization. A cap edge may remain in
-	// TripleJunction only when it is the shared outer rim; every other cap edge
+	// Validate the cap closure before serialization. A cap edge may belong to
+	// MembraneWall only when it is the shared outer rim; every other cap edge
 	// must use the same Inlet/Outlet subset as its cap face. A cap vertex is in
-	// TripleJunction exactly when it touches one of those rim edges; every other
+	// MembraneWall exactly when it touches one of those rim edges; every other
 	// cap vertex is assigned to its Inlet/Outlet face. These rules also give all
 	// refined midpoint vertices a deterministic boundary subset.
 	std::vector<std::set<Edge*> > capClosureEdges(2 * expectedNephrons);
-	std::vector<std::set<Edge*> > capTripleJunctionEdges(2 * expectedNephrons);
-	std::vector<std::set<Vertex*> > capTripleJunctionVertices(2 * expectedNephrons);
+	std::vector<std::set<Edge*> > capMembraneWallEdges(2 * expectedNephrons);
+	std::vector<std::set<Vertex*> > capMembraneWallVertices(2 * expectedNephrons);
 	for (std::map<Face*, number>::const_iterator it = capAxial.begin();
 	     it != capAxial.end(); ++it)
 	{
@@ -6836,33 +6821,33 @@ static size_t assign_indexed_nephron_subsets
 		for (size_t i = 0; i < edges.size(); ++i)
 		{
 			const int edgeSI = sh.get_subset_index(edges[i]);
-			const int tripleJunctionSI = tripleJunctionBase + component;
-			UG_COND_THROW(edgeSI != capSubset && edgeSI != tripleJunctionSI,
-			              "Terminal cap edge escaped Inlet/Outlet/TripleJunction closure.");
+			const int membraneWallSI = membraneWallBase + component;
+			UG_COND_THROW(edgeSI != capSubset && edgeSI != membraneWallSI,
+			              "Terminal cap edge escaped Inlet/Outlet/MembraneWall closure.");
 			if (edgeSI == capSubset) capClosureEdges[capIndex].insert(edges[i]);
-			else capTripleJunctionEdges[capIndex].insert(edges[i]);
+			else capMembraneWallEdges[capIndex].insert(edges[i]);
 		}
 		for (size_t i = 0; i < face->num_vertices(); ++i)
 		{
 			Vertex* vertex = face->vertex(i);
-			bool onTripleJunction = false;
+			bool onMembraneWall = false;
 			Grid::traits<Edge>::secure_container vertexEdges;
 			g.associated_elements(vertexEdges, vertex);
 			for (size_t j = 0; j < vertexEdges.size(); ++j)
 			{
 				if (sh.get_subset_index(vertexEdges[j]) ==
-				    tripleJunctionBase + component)
+				    membraneWallBase + component)
 				{
-					onTripleJunction = true;
+					onMembraneWall = true;
 					break;
 				}
 			}
 			const int expectedVertexSubset =
-				onTripleJunction ? tripleJunctionBase + component : capSubset;
+				onMembraneWall ? membraneWallBase + component : capSubset;
 			UG_COND_THROW(sh.get_subset_index(vertex) != expectedVertexSubset,
-			              "Terminal cap vertex has the wrong Inlet/Outlet/TripleJunction subset.");
-			if (onTripleJunction)
-				capTripleJunctionVertices[capIndex].insert(vertex);
+			              "Terminal cap vertex has the wrong Inlet/Outlet/MembraneWall subset.");
+			if (onMembraneWall)
+				capMembraneWallVertices[capIndex].insert(vertex);
 		}
 	}
 	for (size_t component = 0; component < expectedNephrons; ++component)
@@ -6870,15 +6855,15 @@ static size_t assign_indexed_nephron_subsets
 		UG_LOGN("Nephron " << component + 1
 		        << " cap edge closure: Inlet="
 		        << capClosureEdges[2 * component].size()
-		        << " plus " << capTripleJunctionEdges[2 * component].size()
-		        << " TripleJunction edges / "
-		        << capTripleJunctionVertices[2 * component].size()
-		        << " TripleJunction vertices, Outlet="
+		        << " plus " << capMembraneWallEdges[2 * component].size()
+		        << " MembraneWall edges / "
+		        << capMembraneWallVertices[2 * component].size()
+		        << " MembraneWall vertices, Outlet="
 		        << capClosureEdges[2 * component + 1].size()
-		        << " plus " << capTripleJunctionEdges[2 * component + 1].size()
-		        << " TripleJunction edges / "
-		        << capTripleJunctionVertices[2 * component + 1].size()
-		        << " TripleJunction vertices.");
+		        << " plus " << capMembraneWallEdges[2 * component + 1].size()
+		        << " MembraneWall edges / "
+		        << capMembraneWallVertices[2 * component + 1].size()
+		        << " MembraneWall vertices.");
 	}
 
 	// When manual cap assignment is requested, guarantee that the Inlet/Outlet
@@ -6955,9 +6940,6 @@ static size_t assign_indexed_nephron_subsets
 		sh.set_subset_name(apicalName.c_str(), (int)(6 * i + 3));
 		sh.set_subset_name(inletName.c_str(), (int)(6 * i + 4));
 		sh.set_subset_name(outletName.c_str(), (int)(6 * i + 5));
-		const std::string tripleJunctionName = "TripleJunction" + suffix;
-		sh.set_subset_name(tripleJunctionName.c_str(),
-		                   tripleJunctionBase + (int)i);
 		const std::string membraneWallName = "MembraneWall" + suffix;
 		sh.set_subset_name(membraneWallName.c_str(),
 		                   membraneWallBase + (int)i);
@@ -7117,8 +7099,7 @@ static void import_er_neurites_from_swc_impl
 	if (indexedNephrons > 0)
 	{
 		assign_indexed_nephron_subsets(g, sh, aaPos, aaSurfParams, indexedNephrons);
-		const int tripleJunctionBase = (int)(6 * indexedNephrons + 2);
-		const int membraneWallBase = tripleJunctionBase + (int)indexedNephrons;
+		const int membraneWallBase = (int)(6 * indexedNephrons + 2);
 		for (size_t i = 0; i < indexedNephrons; ++i)
 		{
 			// Use the same exact neurite map for the internal radial layers as for
@@ -7138,13 +7119,9 @@ static void import_er_neurites_from_swc_impl
 			// radial and angular coordinates correctly.
 			projHandler.set_projector((int)(6 * i + 4), neuriteProj);
 			projHandler.set_projector((int)(6 * i + 5), neuriteProj);
-			// The terminal rim is a three-domain junction, not an Apical
-			// transport subset. It nevertheless needs the NeuriteProjector so
-			// refined rim vertices inherit valid surface parameters.
-			projHandler.set_projector(tripleJunctionBase + (int)i, neuriteProj);
-			// The planar terminal membrane annulus uses the same parameter map as
-			// the tube during refinement, then is snapped back to the OuterWall
-			// plane. Keeping it separate permits a distinct wall-contact BC.
+			// The terminal cap rim and planar membrane annulus share MembraneWall.
+			// They use the same parameter map as the tube during refinement and are
+			// then snapped back to the OuterWall plane.
 			projHandler.set_projector(membraneWallBase + (int)i, neuriteProj);
 		}
 	}

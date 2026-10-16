@@ -48825,7 +48825,6 @@ ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/neuro_collection
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/pressure_continuity_fv1.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/pressure_trace_constraint.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/stimulation/action_potential_train.h \
-  /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/surface_pressure_stabilization_fv1.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/test/neurite_math_util.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/test/test_neurite_proj.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/test/types.h \
@@ -74701,8 +74700,6 @@ ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/util/neurite_axi
 
 /Users/alhilaba/UG4_promesh_ogrid/externals/BoostForUG4/boost/geometry/strategies/covered_by.hpp:
 
-/Users/alhilaba/UG4_promesh_ogrid/externals/BoostForUG4/boost/geometry/strategies/convex_hull.hpp:
-
 /Users/alhilaba/UG4_promesh_ogrid/externals/BoostForUG4/boost/geometry/strategies/concepts/within_concept.hpp:
 
 /Users/alhilaba/UG4_promesh_ogrid/externals/BoostForUG4/boost/geometry/strategies/concepts/centroid_concept.hpp:
@@ -76244,8 +76241,6 @@ ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/util/neurite_axi
 /Users/alhilaba/UG4_promesh_ogrid/externals/BoostForUG4/boost/function_types/detail/encoding/def.hpp:
 
 /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/user_flux_bnd_fv1.h:
-
-/Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/surface_pressure_stabilization_fv1.h:
 
 /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/pressure_continuity_fv1.h:
 
@@ -80380,6 +80375,8 @@ nc_config.h:
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__debug_utils/strict_weak_ordering_check.h:
 
 /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__mutex/once_flag.h:
+
+/Users/alhilaba/UG4_promesh_ogrid/externals/BoostForUG4/boost/geometry/strategies/convex_hull.hpp:
 
 /Users/alhilaba/UG4_promesh_ogrid/ugcore/ugbase/common/space_partitioning/ntree_traverser.h:
 
