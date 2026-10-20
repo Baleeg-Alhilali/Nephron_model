@@ -3318,7 +3318,7 @@ static void create_neurite_1d
 
 void export_to_swc
 (
-	MultiGrid& g,
+	Grid& g,
 	ISubsetHandler& sh,
 	const std::string& fileName
 )
@@ -5882,7 +5882,7 @@ static void report_active_terminal_face_geometry
 
 static void remove_orphan_objects_after_projected_refinement
 (
-	Grid& g,
+	MultiGrid& g,
 	size_t refinementLevel
 )
 {
@@ -5929,7 +5929,7 @@ static void remove_orphan_objects_after_projected_refinement
 
 static void report_nephron_surface_projection_residual
 (
-	MultiGrid& g,
+	Grid& g,
 	ISubsetHandler& sh,
 	Grid::VertexAttachmentAccessor<APosition>& aaPos,
 	Grid::VertexAttachmentAccessor<Attachment<NeuriteProjector::SurfaceParams> >&
@@ -5945,10 +5945,14 @@ static void report_nephron_surface_projection_residual
 	size_t limited = 0;
 	number maximumResidual = 0.0;
 	number residualSum = 0.0;
+	number maximumPositionDisplacement = 0.0;
+	number positionDisplacementSum = 0.0;
+	MultiGrid* multigrid = dynamic_cast<MultiGrid*>(&g);
 	for (VertexIterator it = g.begin<Vertex>(); it != g.end<Vertex>(); ++it)
 	{
 		Vertex* vertex = *it;
-		if (g.get_level(vertex) != refinementLevel) continue;
+		if (multigrid && multigrid->get_level(vertex) != refinementLevel)
+			continue;
 		const int si = sh.get_subset_index(vertex);
 		bool surfaceVertex = false;
 		for (size_t n = 0; n < numNephrons; ++n)
@@ -5969,6 +5973,11 @@ static void report_nephron_surface_projection_residual
 		const NeuriteProjector::SurfaceParams paramsBefore = aaSurfParams[vertex];
 		projector.project(vertex);
 		const vector3 exactPosition = aaPos[vertex];
+		const number positionDisplacement =
+			VecDistance(positionBefore, exactPosition);
+		positionDisplacementSum += positionDisplacement;
+		maximumPositionDisplacement = std::max(
+			maximumPositionDisplacement, positionDisplacement);
 		aaPos[vertex] = positionBefore;
 		aaSurfParams[vertex] = paramsBefore;
 		aaSurfParams[vertex].radial = 0.0;
@@ -5991,7 +6000,11 @@ static void report_nephron_surface_projection_residual
 	        << " Apical/Basolateral radius audit: checked=" << checked
 	        << ", off-radius=" << limited
 	        << ", mean residual=" << (checked ? residualSum/checked : 0.0)
-	        << ", max residual=" << maximumResidual << ".");
+	        << ", max residual=" << maximumResidual
+	        << ", mean full-position displacement="
+	        << (checked ? positionDisplacementSum/checked : 0.0)
+	        << ", max full-position displacement="
+	        << maximumPositionDisplacement << ".");
 }
 
 
@@ -7165,6 +7178,10 @@ static void import_er_neurites_from_swc_impl
 	// The no-projector pathway needs surface parameters only while positioning
 	// the initial O-grid. Remove them before writing a clean linear-refinement
 	// mesh that cannot invoke NeuriteProjector later.
+	if (serializeProjector)
+		report_nephron_surface_projection_residual(
+			g, sh, aaPos, aaSurfParams, *neuriteProj,
+			indexedNephrons, 0);
 	if (!serializeProjector && g.has_vertex_attachment(aSP))
 		g.detach_from_vertices(aSP);
 	GridWriterUGX ugxWriter;
