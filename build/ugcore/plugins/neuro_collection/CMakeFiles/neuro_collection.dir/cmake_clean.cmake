@@ -33,6 +33,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/neuro_collection.dir/membrane_transporters/membrane_transporter_interface.cpp.o.d"
   "CMakeFiles/neuro_collection.dir/membrane_transporters/mncx.cpp.o"
   "CMakeFiles/neuro_collection.dir/membrane_transporters/mncx.cpp.o.d"
+  "CMakeFiles/neuro_collection.dir/membrane_transporters/nak_pump.cpp.o"
+  "CMakeFiles/neuro_collection.dir/membrane_transporters/nak_pump.cpp.o.d"
   "CMakeFiles/neuro_collection.dir/membrane_transporters/ncx.cpp.o"
   "CMakeFiles/neuro_collection.dir/membrane_transporters/ncx.cpp.o.d"
   "CMakeFiles/neuro_collection.dir/membrane_transporters/nmdar.cpp.o"

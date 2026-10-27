@@ -81,6 +81,7 @@ set(SOURCES neuro_collection_plugin.cpp
             membrane_transporters/ryr_linearized.cpp
             membrane_transporters/serca.cpp
             membrane_transporters/leak.cpp
+            membrane_transporters/nak_pump.cpp
             membrane_transporters/pmca.cpp
             membrane_transporters/ncx.cpp
             membrane_transporters/vdcc_bg/vdcc_bg.cpp

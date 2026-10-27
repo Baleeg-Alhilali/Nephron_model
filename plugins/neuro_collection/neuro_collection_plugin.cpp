@@ -72,6 +72,7 @@
 #include "membrane_transporters/ryr_linearized.h"
 #include "membrane_transporters/serca.h"
 #include "membrane_transporters/leak.h"
+#include "membrane_transporters/nak_pump.h"
 #include "membrane_transporters/pmca.h"
 #include "membrane_transporters/ncx.h"
 #include "membrane_transporters/ryr_instat.h"
@@ -875,6 +876,22 @@ static void Common(Registry& reg, string grp)
 			.add_method("set_permeability", &T::set_permeability, "", "permeability", "")
 			.add_method("set_temperature", &T::set_temperature, "", "temperature (K)", "")
 			.add_method("set_valency", &T::set_valency, "", "valency", "")
+			.set_construct_as_smart_pointer(true);
+	}
+	{
+		typedef NaKPump T;
+		typedef IMembraneTransporter TBase;
+		std::string name = std::string("NaKPump");
+		reg.add_class_<T, TBase>(name, grp)
+			.add_constructor<void (*)(const char*)>
+				("Functions as comma-separated string with the following order: "
+				 "{Na_i, Na_o, K_i, K_o}")
+			.add_constructor<void (*)(const std::vector<std::string>&)>
+				("Function vector with the following order: "
+				 "{Na_i, Na_o, K_i, K_o}")
+			.add_method("set_max_flux", &T::set_max_flux, "", "maximum cycle flux", "")
+			.add_method("set_k_na", &T::set_k_na, "", "Na half-saturation concentration", "")
+			.add_method("set_k_k", &T::set_k_k, "", "K half-saturation concentration", "")
 			.set_construct_as_smart_pointer(true);
 	}
 	{

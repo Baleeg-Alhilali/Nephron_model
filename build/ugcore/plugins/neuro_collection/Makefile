@@ -579,6 +579,30 @@ membrane_transporters/mncx.cpp.s:
 	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/membrane_transporters/mncx.cpp.s
 .PHONY : membrane_transporters/mncx.cpp.s
 
+membrane_transporters/nak_pump.o: membrane_transporters/nak_pump.cpp.o
+.PHONY : membrane_transporters/nak_pump.o
+
+# target to build an object file
+membrane_transporters/nak_pump.cpp.o:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/membrane_transporters/nak_pump.cpp.o
+.PHONY : membrane_transporters/nak_pump.cpp.o
+
+membrane_transporters/nak_pump.i: membrane_transporters/nak_pump.cpp.i
+.PHONY : membrane_transporters/nak_pump.i
+
+# target to preprocess a source file
+membrane_transporters/nak_pump.cpp.i:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/membrane_transporters/nak_pump.cpp.i
+.PHONY : membrane_transporters/nak_pump.cpp.i
+
+membrane_transporters/nak_pump.s: membrane_transporters/nak_pump.cpp.s
+.PHONY : membrane_transporters/nak_pump.s
+
+# target to generate assembly for a file
+membrane_transporters/nak_pump.cpp.s:
+	cd /Users/alhilaba/UG4_promesh_ogrid/build && $(MAKE) $(MAKESILENT) -f ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/build.make ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/membrane_transporters/nak_pump.cpp.s
+.PHONY : membrane_transporters/nak_pump.cpp.s
+
 membrane_transporters/ncx.o: membrane_transporters/ncx.cpp.o
 .PHONY : membrane_transporters/ncx.o
 
@@ -1290,6 +1314,9 @@ help:
 	@echo "... membrane_transporters/mncx.o"
 	@echo "... membrane_transporters/mncx.i"
 	@echo "... membrane_transporters/mncx.s"
+	@echo "... membrane_transporters/nak_pump.o"
+	@echo "... membrane_transporters/nak_pump.i"
+	@echo "... membrane_transporters/nak_pump.s"
 	@echo "... membrane_transporters/ncx.o"
 	@echo "... membrane_transporters/ncx.i"
 	@echo "... membrane_transporters/ncx.s"

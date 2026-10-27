@@ -1949,6 +1949,7 @@ ugcore/plugins/neuro_collection/CMakeFiles/neuro_collection.dir/neuro_collection
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/ryr_linearized_impl.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/serca.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/leak.h \
+  /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/nak_pump.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/pmca.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/ncx.h \
   /Users/alhilaba/UG4_promesh_ogrid/plugins/neuro_collection/membrane_transporters/ryr_instat.h \
