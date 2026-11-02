@@ -1734,9 +1734,14 @@ void AddGlobalAttachmentsToSerializer (
 		GridDataSerializationHandler& handler,
 		Grid& grid)
 {
-	const vector<string>& attachmentNames = GlobalAttachments::declared_attachment_names();
+	// Declaration order may differ between ranks (e.g. when a serialized
+	// projector declares its attachments while being reconstructed).  Every
+	// rank must nevertheless install serializers in exactly the same order.
+	vector<string> attachmentNames = GlobalAttachments::declared_attachment_names();
+	std::sort(attachmentNames.begin(), attachmentNames.end());
 	for(size_t i = 0; i < attachmentNames.size(); ++i){
 		const string& name = attachmentNames[i];
+		if(name == "npSurfParams") continue; // diagnostic: isolate custom attachment transfer
 		if(GlobalAttachments::is_attached<TElem>(grid, name)){
 			GlobalAttachments::add_data_serializer<TElem>(handler, grid, name);
 		}
@@ -1752,7 +1757,10 @@ static void SynchronizeAttachedGlobalAttachments (
 	UG_DLOG(LG_DIST, 1, "SynchronizeAttachedGlobalAttachments start\n");
 
 //	now make sure that the same global attachments are attached everywhere
-	const vector<string>&  names = GlobalAttachments::declared_attachment_names();
+	// Compare and attach by a canonical name order.  Equal counts alone are not
+	// sufficient because later serializer order is communication-significant.
+	vector<string> names = GlobalAttachments::declared_attachment_names();
+	std::sort(names.begin(), names.end());
 
 //	make sure that the same number of attachments is declared on all processes
 	const size_t maxNumAttachmentNames = procComm.allreduce(names.size(), PCL_RO_MAX);

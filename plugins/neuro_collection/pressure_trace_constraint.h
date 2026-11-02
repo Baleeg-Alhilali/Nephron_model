@@ -61,6 +61,16 @@ public:
         vector_type& c, ConstSmartPtr<DoFDistribution> dd,
         int type, number time = 0.0);
 
+    virtual void adjust_prolongation(
+        matrix_type& P, ConstSmartPtr<DoFDistribution> ddFine,
+        ConstSmartPtr<DoFDistribution> ddCoarse, int type,
+        number time = 0.0);
+
+    virtual void adjust_restriction(
+        matrix_type& R, ConstSmartPtr<DoFDistribution> ddCoarse,
+        ConstSmartPtr<DoFDistribution> ddFine, int type,
+        number time = 0.0);
+
 private:
     void collect_pairs(
         ConstSmartPtr<DoFDistribution> dd,

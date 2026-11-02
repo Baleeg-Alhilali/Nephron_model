@@ -187,7 +187,10 @@ static bool LoadGrid(Grid& grid, ISubsetHandler* psh,
 //	located and load it from that location afterwards.
 	bool loadingGrid = true;
 	#ifdef UG_PARALLEL
-		if((procId != -1) && (pcl::ProcRank() != procId))
+		// procId == -2 means that every process loads the grid independently.
+		// IDomain::geometry_changed_callback uses the same sentinel to suppress
+		// root-to-rank geometry/projector broadcasts.
+		if((procId != -1) && (procId != -2) && (pcl::ProcRank() != procId))
 			loadingGrid = false;
 	#endif
 
@@ -234,7 +237,7 @@ static bool LoadGrid(Grid& grid, ISubsetHandler* psh,
 	
 	#ifdef UG_PARALLEL
 		pcl::ProcessCommunicator procCom;
-		if(procId == -1)
+		if((procId == -1) || (procId == -2))
 			retVal = pcl::AllProcsTrue(retVal, procCom);
 		else
 			retVal = pcl::OneProcTrue(retVal, procCom);
@@ -252,7 +255,11 @@ static bool LoadGrid(Grid& grid, SPProjectionHandler* ph, size_t& num_ph, ISubse
 //	located and load it from that location afterwards.
 	bool loadingGrid = true;
 	#ifdef UG_PARALLEL
-		if((procId != -1) && (pcl::ProcRank() != procId))
+		// procId == -2 means that every process loads the grid independently.
+		// procId == -3 additionally discards non-root grid copies after loading;
+		// each rank still retains deserialized projector state.
+		if((procId != -1) && (procId != -2) && (procId != -3) &&
+		   (pcl::ProcRank() != procId))
 			loadingGrid = false;
 	#endif
 
@@ -291,6 +298,11 @@ static bool LoadGrid(Grid& grid, SPProjectionHandler* ph, size_t& num_ph, ISubse
 
 		}
 	}
+
+	#ifdef UG_PARALLEL
+		if((procId == -3) && (pcl::ProcRank() != 0))
+			grid.clear();
+	#endif
 	
 	//	declare global attachments on all processors
 	#ifdef UG_PARALLEL
@@ -301,7 +313,7 @@ static bool LoadGrid(Grid& grid, SPProjectionHandler* ph, size_t& num_ph, ISubse
 	
 	#ifdef UG_PARALLEL
 		pcl::ProcessCommunicator procCom;
-		if(procId == -1)
+		if((procId == -1) || (procId == -2) || (procId == -3))
 			retVal = pcl::AllProcsTrue(retVal, procCom);
 		else
 		{

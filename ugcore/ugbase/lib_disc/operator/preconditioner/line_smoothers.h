@@ -420,7 +420,9 @@ class LineGaussSeidel : public IPreconditioner<TAlgebra>
 			m_nr_backwardy=1;
 			m_nr_forwardz=1;
 			m_nr_backwardz=1;
-			OrderLex<TDomain>(*m_spApproxSpace,"lr");
+			// Ordering must be established once by the caller before matrix
+			// assembly. GMG clones this smoother for every level; reordering from
+			// the constructor invalidates assembled matrices and may segfault.
 		};
 
 	// 	Update ordering indices

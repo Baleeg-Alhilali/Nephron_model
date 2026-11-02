@@ -113,7 +113,9 @@ update_subset_infos(int rootProc)
 	}
 
 	// do not communicate if geom is created on all procs
-	if (rootProc == -2) return;
+	// -2: load independently on all ranks; -3: the same, followed by removal
+	// of duplicate non-root grids before ordinary redistribution.
+	if (rootProc == -2 || rootProc == -3) return;
 
 #ifdef UG_PARALLEL
 	pcl::ProcessCommunicator procCom;

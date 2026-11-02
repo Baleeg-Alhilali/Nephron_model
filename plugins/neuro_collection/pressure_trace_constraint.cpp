@@ -220,6 +220,61 @@ void PressureTraceConstraint<TDomain, TAlgebra>::adjust_correction(
     set_slave_values(c, dd);
 }
 
+template <typename TDomain, typename TAlgebra>
+void PressureTraceConstraint<TDomain, TAlgebra>::adjust_prolongation(
+    matrix_type& P, ConstSmartPtr<DoFDistribution> ddFine,
+    ConstSmartPtr<DoFDistribution> ddCoarse, int, number)
+{
+    // A fine-grid correction must remain in the constrained space. Standard
+    // component-wise P1 transfer otherwise interpolates the two pressure
+    // traces independently at newly created Apical vertices.
+    typedef typename matrix_type::value_type block_type;
+    typedef typename matrix_type::row_iterator row_iterator;
+    const number c = 1.0 / m_pressureScale;
+    std::vector<std::pair<size_t, size_t> > finePairs;
+    std::vector<std::pair<size_t, size_t> > coarsePairs;
+    collect_pairs(ddFine, finePairs);
+    collect_pairs(ddCoarse, coarsePairs);
+    std::map<size_t, size_t> coarseSlaveToMaster;
+    for (size_t p = 0; p < coarsePairs.size(); ++p)
+        coarseSlaveToMaster[coarsePairs[p].second] = coarsePairs[p].first;
+
+    for (size_t p = 0; p < finePairs.size(); ++p)
+    {
+        const size_t master = finePairs[p].first;
+        const size_t slave = finePairs[p].second;
+        std::vector<std::pair<size_t, block_type> > masterRow;
+        std::vector<std::pair<size_t, block_type> > slaveRow;
+        for (row_iterator it = P.begin_row(master); it != P.end_row(master); ++it)
+            masterRow.push_back(std::make_pair(it.index(), it.value()));
+        for (row_iterator it = P.begin_row(slave); it != P.end_row(slave); ++it)
+            slaveRow.push_back(std::make_pair(it.index(), it.value()));
+
+        // Keep the ordinary Darcy interpolation so the coarse slave remains
+        // an algebraic unknown. Remove its value on the constrained subspace,
+        // then add c times the Stokes interpolation. For p_D,c=c*p_S,c this
+        // reduces exactly to p_D,f=c*p_S,f.
+        for (size_t k = 0; k < slaveRow.size(); ++k)
+        {
+            typename std::map<size_t, size_t>::const_iterator found =
+                coarseSlaveToMaster.find(slaveRow[k].first);
+            if (found != coarseSlaveToMaster.end())
+                P(slave, found->second) -= c * slaveRow[k].second;
+        }
+        for (size_t k = 0; k < masterRow.size(); ++k)
+            P(slave, masterRow[k].first) += c * masterRow[k].second;
+    }
+}
+
+template <typename TDomain, typename TAlgebra>
+void PressureTraceConstraint<TDomain, TAlgebra>::adjust_restriction(
+    matrix_type& R, ConstSmartPtr<DoFDistribution> ddCoarse,
+    ConstSmartPtr<DoFDistribution>, int, number)
+{
+    // Retain standard component-wise restriction. The coarse slave row is the
+    // exact pressure-continuity equation and must not be eliminated here.
+}
+
 #ifdef UG_CPU_1
 #ifdef UG_DIM_1
 template class PressureTraceConstraint<Domain1d, CPUAlgebra>;

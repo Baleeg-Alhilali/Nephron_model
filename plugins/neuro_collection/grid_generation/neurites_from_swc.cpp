@@ -7110,8 +7110,13 @@ static void import_er_neurites_from_swc_impl
 		create_padded_box_surface(g, sh, aaPos, boxPadding, 4, boxSurfaceRefs,
 		                          &terminalMetadata, &aaSurfParams);
 	if (fillInter)
-		add_isolated_inter_to_version2_nephron(g, sh, psh, aaPos, aaSurfParams, interTetQuality,
-		                                        terminalMetadata.terminalsOnOuterWall);
+		// Use the topologically conforming transition: each Membrane hex is
+		// replaced by pyramids/tetrahedra whose Basolateral triangles are the
+		// very same face objects used by Inter.  The isolated path linked a
+		// Membrane quad and two Inter triangles by misusing UG4's
+		// ConstrainingFace hierarchy at level 0; those faces had no refinement
+		// children and produced invalid hanging-node and MPI DoF layouts.
+		add_inter_to_version2_nephron(g, sh, psh, aaPos, interTetQuality);
 	if (fillInter)
 	{
 		// Keep the duplicate-vertex tolerance proportional to the input SWC
