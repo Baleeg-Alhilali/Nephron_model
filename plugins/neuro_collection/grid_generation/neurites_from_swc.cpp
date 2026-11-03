@@ -4641,6 +4641,15 @@ static void add_inter_to_version2_nephron
 		}
 	}
 	g.erase(overlappingTetgenVolumes.begin(), overlappingTetgenVolumes.end());
+	// TetGen's bulk removal can leave the vertex-to-face lookup attachment with
+	// erased face pointers.  Volume auto-generation uses that lookup while the
+	// structured Lumen/Membrane cells are restored below.  Rebuild it from the
+	// live faces before creating any new volume.
+	if (g.option_is_enabled(VRTOPT_STORE_ASSOCIATED_FACES))
+	{
+		g.disable_options(VRTOPT_STORE_ASSOCIATED_FACES);
+		g.enable_options(VRTOPT_STORE_ASSOCIATED_FACES);
+	}
 	for (VolumeIterator vit = g.begin<Volume>(); vit != g.end<Volume>(); ++vit)
 		sh.assign_subset(*vit, 5);
 	UG_LOGN("Removed " << overlappingTetgenVolumes.size()
@@ -4743,7 +4752,29 @@ static void add_inter_to_version2_nephron
 	std::vector<Face*> basolateralFaces(sh.begin<Face>(2), sh.end<Face>(2));
 	std::vector<Face*> apicalFaces(sh.begin<Face>(3), sh.end<Face>(3));
 	std::vector<Face*> outerFaces(sh.begin<Face>(4), sh.end<Face>(4));
-	CopySubsetIndicesToSides(sh, false);
+	// Do not use CopySubsetIndicesToSides here. TetGen has just removed and
+	// recreated many volumes/sides, and its attached-element lists may still
+	// contain stale entries until the grid's next full attachment rebuild. That
+	// made O-grids with more than four circumferential vertices dereference an
+	// erased side. Close each live volume explicitly through Grid associations.
+	std::vector<Face*> closureFaces;
+	std::vector<Edge*> closureEdges;
+	for (VolumeIterator vit = g.begin<Volume>(); vit != g.end<Volume>(); ++vit)
+	{
+		Volume* vol = *vit;
+		const int si = sh.get_subset_index(vol);
+		CollectAssociated(closureFaces, g, vol);
+		for (size_t f = 0; f < closureFaces.size(); ++f)
+		{
+			Face* face = closureFaces[f];
+			sh.assign_subset(face, si);
+			for (size_t j = 0; j < face->num_vertices(); ++j)
+				sh.assign_subset(face->vertex(j), si);
+			CollectAssociated(closureEdges, g, face);
+			for (size_t e = 0; e < closureEdges.size(); ++e)
+				sh.assign_subset(closureEdges[e], si);
+		}
+	}
 	auto restoreBoundary = [&] (const std::vector<Face*>& faces, int si)
 	{
 		std::vector<Edge*> edges;
