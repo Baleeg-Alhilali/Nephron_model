@@ -4641,15 +4641,22 @@ static void add_inter_to_version2_nephron
 		}
 	}
 	g.erase(overlappingTetgenVolumes.begin(), overlappingTetgenVolumes.end());
-	// TetGen's bulk removal can leave the vertex-to-face lookup attachment with
-	// erased face pointers.  Volume auto-generation uses that lookup while the
-	// structured Lumen/Membrane cells are restored below.  Rebuild it from the
-	// live faces before creating any new volume.
-	if (g.option_is_enabled(VRTOPT_STORE_ASSOCIATED_FACES))
-	{
+	// TetGen's bulk removal can leave both the vertex-to-face lookup and the
+	// per-volume face cache with erased face pointers.  Volume auto-generation
+	// uses the former while the closure pass below uses the latter.  Rebuild both
+	// attachments from the live grid before creating any new volume.
+	const bool storedVertexFaces =
+		g.option_is_enabled(VRTOPT_STORE_ASSOCIATED_FACES);
+	const bool storedVolumeFaces =
+		g.option_is_enabled(VOLOPT_STORE_ASSOCIATED_FACES);
+	if (storedVolumeFaces)
+		g.disable_options(VOLOPT_STORE_ASSOCIATED_FACES);
+	if (storedVertexFaces)
 		g.disable_options(VRTOPT_STORE_ASSOCIATED_FACES);
+	if (storedVertexFaces)
 		g.enable_options(VRTOPT_STORE_ASSOCIATED_FACES);
-	}
+	if (storedVolumeFaces)
+		g.enable_options(VOLOPT_STORE_ASSOCIATED_FACES);
 	for (VolumeIterator vit = g.begin<Volume>(); vit != g.end<Volume>(); ++vit)
 		sh.assign_subset(*vit, 5);
 	UG_LOGN("Removed " << overlappingTetgenVolumes.size()
@@ -4817,7 +4824,8 @@ static void add_isolated_inter_to_version2_nephron
 	Grid::VertexAttachmentAccessor<APosition>& aaPos,
 	Grid::VertexAttachmentAccessor<Attachment<NeuriteProjector::SurfaceParams> >& aaSurfParams,
 	number tetQuality,
-	bool terminalPorts = false
+	bool terminalPorts = false,
+	bool conformingMembraneTransition = false
 )
 {
 	/*
@@ -5240,6 +5248,177 @@ static void add_isolated_inter_to_version2_nephron
 		destinationBasolateralKeys.insert(destTriKey(
 			destVertex(face->vertex(0)), destVertex(face->vertex(1)),
 			destVertex(face->vertex(2))));
+	}
+
+	if (conformingMembraneTransition)
+	{
+		// TetGen ran on the isolated copy, so every original tube vertex is
+		// still alive. Replace only the Membrane hexahedra: non-Basolateral
+		// quadrilateral sides become pyramid bases, while each Basolateral quad
+		// is split along TetGen's recovered diagonal into two tetrahedra. The
+		// resulting triangles are ordinary shared faces of Membrane and Inter.
+		std::vector<Volume*> oldMembraneVolumes;
+		for (size_t h = 0; h < membraneHexes.size(); ++h)
+			oldMembraneVolumes.push_back(membraneHexes[h].original);
+		g.erase(oldMembraneVolumes.begin(), oldMembraneVolumes.end());
+
+		std::vector<Face*> oldBasolateralQuads;
+		for (FaceIterator fit = sh.begin<Face>(2); fit != sh.end<Face>(2); ++fit)
+			if ((*fit)->num_vertices() == 4)
+				oldBasolateralQuads.push_back(*fit);
+		g.erase(oldBasolateralQuads.begin(), oldBasolateralQuads.end());
+
+		std::set<DestTriKey> actualBasolateralKeys;
+		std::vector<Volume*> restoredMembraneVolumes;
+		for (size_t h = 0; h < membraneHexes.size(); ++h)
+		{
+			const MembraneHexRecord& rec = membraneHexes[h];
+			RegularVertex* center = *g.create<RegularVertex>();
+			aaPos[center] = vector3(0.0);
+			for (size_t i = 0; i < 8; ++i)
+				aaPos[center] += aaPos[rec.vrts[i]];
+			aaPos[center] *= 0.125;
+			aaSurfParams[center] = aaSurfParams[rec.vrts[0]];
+			aaSurfParams[center].axial = 0.0;
+			aaSurfParams[center].radial = 0.0;
+			for (size_t i = 0; i < 8; ++i)
+			{
+				aaSurfParams[center].axial +=
+					0.125 * aaSurfParams[rec.vrts[i]].axial;
+				aaSurfParams[center].radial +=
+					0.125 * aaSurfParams[rec.vrts[i]].radial;
+			}
+			sh.assign_subset(center, 0);
+			psh.assign_subset(center, 0);
+
+			for (size_t f = 0; f < 6; ++f)
+			{
+				Vertex* a = rec.faces[f][0];
+				Vertex* b = rec.faces[f][1];
+				Vertex* c = rec.faces[f][2];
+				Vertex* d = rec.faces[f][3];
+				if (rec.faceSubsets[f] != 2)
+				{
+					Pyramid* pyramid = *g.create<Pyramid>(
+						PyramidDescriptor(a,b,c,d,center));
+					sh.assign_subset(pyramid, 0);
+					psh.assign_subset(pyramid, 0);
+					restoredMembraneVolumes.push_back(pyramid);
+					continue;
+				}
+
+				const DestTriKey ac0 = destTriKey(a,b,c);
+				const DestTriKey ac1 = destTriKey(a,c,d);
+				const DestTriKey bd0 = destTriKey(a,b,d);
+				const DestTriKey bd1 = destTriKey(b,c,d);
+				const bool useAC = destinationBasolateralKeys.count(ac0)
+					&& destinationBasolateralKeys.count(ac1);
+				const bool useBD = destinationBasolateralKeys.count(bd0)
+					&& destinationBasolateralKeys.count(bd1);
+				UG_COND_THROW(useAC == useBD,
+				              "Could not select one recovered diagonal for a "
+				              "Basolateral quadrilateral.");
+
+				Tetrahedron* t0;
+				Tetrahedron* t1;
+				if (useAC)
+				{
+					t0 = *g.create<Tetrahedron>(
+						TetrahedronDescriptor(center,a,b,c));
+					t1 = *g.create<Tetrahedron>(
+						TetrahedronDescriptor(center,a,c,d));
+					actualBasolateralKeys.insert(ac0);
+					actualBasolateralKeys.insert(ac1);
+				}
+				else
+				{
+					t0 = *g.create<Tetrahedron>(
+						TetrahedronDescriptor(center,a,b,d));
+					t1 = *g.create<Tetrahedron>(
+						TetrahedronDescriptor(center,b,c,d));
+					actualBasolateralKeys.insert(bd0);
+					actualBasolateralKeys.insert(bd1);
+				}
+				sh.assign_subset(t0, 0);
+				sh.assign_subset(t1, 0);
+				psh.assign_subset(t0, 0);
+				psh.assign_subset(t1, 0);
+				restoredMembraneVolumes.push_back(t0);
+				restoredMembraneVolumes.push_back(t1);
+			}
+		}
+		FixOrientation(g, restoredMembraneVolumes.begin(),
+		               restoredMembraneVolumes.end(), aaPos);
+
+		std::vector<Face*> basolateralFaces;
+		for (FaceIterator fit = g.begin<Face>(); fit != g.end<Face>(); ++fit)
+		{
+			Face* face = *fit;
+			if (face->num_vertices() != 3) continue;
+			if (actualBasolateralKeys.count(destTriKey(
+				face->vertex(0), face->vertex(1), face->vertex(2))))
+				basolateralFaces.push_back(face);
+		}
+		UG_COND_THROW(basolateralFaces.size() != actualBasolateralKeys.size(),
+		              "Recovered Basolateral triangle count does not match the "
+		              "conforming Membrane transition.");
+		std::vector<Face*> apicalFaces(sh.begin<Face>(3), sh.end<Face>(3));
+		std::vector<Face*> outerFaces(sh.begin<Face>(4), sh.end<Face>(4));
+
+		// Close each live volume explicitly, then restore physical-interface
+		// precedence. TetGen never touched this destination grid, so these
+		// associations contain no temporary-grid or erased-tube pointers.
+		std::vector<Face*> closureFaces;
+		std::vector<Edge*> closureEdges;
+		for (VolumeIterator vit = g.begin<Volume>(); vit != g.end<Volume>(); ++vit)
+		{
+			Volume* vol = *vit;
+			const int si = sh.get_subset_index(vol);
+			CollectAssociated(closureFaces, g, vol);
+			for (size_t f = 0; f < closureFaces.size(); ++f)
+			{
+				Face* face = closureFaces[f];
+				sh.assign_subset(face, si);
+				for (size_t j = 0; j < face->num_vertices(); ++j)
+					sh.assign_subset(face->vertex(j), si);
+				CollectAssociated(closureEdges, g, face);
+				for (size_t e = 0; e < closureEdges.size(); ++e)
+					sh.assign_subset(closureEdges[e], si);
+			}
+		}
+		auto restoreBoundary = [&] (const std::vector<Face*>& faces, int si)
+		{
+			std::vector<Edge*> edges;
+			for (size_t i = 0; i < faces.size(); ++i)
+			{
+				Face* face = faces[i];
+				sh.assign_subset(face, si);
+				psh.assign_subset(face, si == 4 ? 1 : 0);
+				for (size_t j = 0; j < face->num_vertices(); ++j)
+				{
+					sh.assign_subset(face->vertex(j), si);
+					psh.assign_subset(face->vertex(j), si == 4 ? 1 : 0);
+				}
+				CollectAssociated(edges, g, face);
+				for (size_t j = 0; j < edges.size(); ++j)
+				{
+					sh.assign_subset(edges[j], si);
+					psh.assign_subset(edges[j], si == 4 ? 1 : 0);
+				}
+			}
+		};
+		restoreBoundary(basolateralFaces, 2);
+		restoreBoundary(apicalFaces, 3);
+		restoreBoundary(outerFaces, 4);
+		sh.set_subset_name("Membrane", 0);
+		sh.set_subset_name("Lumen", 1);
+		sh.set_subset_name("Basolateral", 2);
+		sh.set_subset_name("Apical", 3);
+		sh.set_subset_name("OuterWall", 4);
+		sh.set_subset_name("Inter", 5);
+		UG_LOGN("Added isolated, conforming exterior Inter with ordinary shared "
+		        << "Basolateral triangles.");
+		return;
 	}
 
 	// Keep the structured membrane hexahedra and their quadrilateral ring strips.
@@ -7141,13 +7320,12 @@ static void import_er_neurites_from_swc_impl
 		create_padded_box_surface(g, sh, aaPos, boxPadding, 4, boxSurfaceRefs,
 		                          &terminalMetadata, &aaSurfParams);
 	if (fillInter)
-		// Use the topologically conforming transition: each Membrane hex is
-		// replaced by pyramids/tetrahedra whose Basolateral triangles are the
-		// very same face objects used by Inter.  The isolated path linked a
-		// Membrane quad and two Inter triangles by misusing UG4's
-		// ConstrainingFace hierarchy at level 0; those faces had no refinement
-		// children and produced invalid hanging-node and MPI DoF layouts.
-		add_inter_to_version2_nephron(g, sh, psh, aaPos, interTetQuality);
+		// Tetrahedralize Inter on an isolated copy so TetGen cannot delete or
+		// move projector-backed tube vertices.  Select its conforming branch:
+		// each Membrane hex is replaced by pyramids/tetrahedra whose
+		// Basolateral triangles are the same ordinary face objects used by Inter.
+		add_isolated_inter_to_version2_nephron(g, sh, psh, aaPos,
+			aaSurfParams, interTetQuality, true, true);
 	if (fillInter)
 	{
 		// Keep the duplicate-vertex tolerance proportional to the input SWC
