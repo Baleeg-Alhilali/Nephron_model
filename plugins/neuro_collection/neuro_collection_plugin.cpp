@@ -167,6 +167,11 @@ static void DomainAlgebra(Registry& reg, string grp)
 				"Stokes pressure#stored Darcy pressure#interface subset")
 			.add_method("set_pressure_scale", &T::set_pressure_scale,
 				"", "scale", "Physical Darcy pressure per stored pressure.")
+			.add_method("capture_next_interface_defect",
+				&T::capture_next_interface_defect,
+				"Capture the next unreduced interface defect", "", "")
+			.add_method("interface_defect_sums", &T::interface_defect_sums,
+				"Stokes, Darcy, and combined interface defect sums", "", "")
 			.set_construct_as_smart_pointer(true);
 		reg.add_class_to_group(name, "PressureTraceConstraint", tag);
 	}

@@ -1741,7 +1741,6 @@ void AddGlobalAttachmentsToSerializer (
 	std::sort(attachmentNames.begin(), attachmentNames.end());
 	for(size_t i = 0; i < attachmentNames.size(); ++i){
 		const string& name = attachmentNames[i];
-		if(name == "npSurfParams") continue; // diagnostic: isolate custom attachment transfer
 		if(GlobalAttachments::is_attached<TElem>(grid, name)){
 			GlobalAttachments::add_data_serializer<TElem>(handler, grid, name);
 		}

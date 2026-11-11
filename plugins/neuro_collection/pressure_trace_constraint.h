@@ -30,6 +30,8 @@ public:
                             const char* interfaceSubset);
 
     void set_pressure_scale(number scale);
+    void capture_next_interface_defect();
+    std::vector<number> interface_defect_sums() const;
     virtual int type() const { return CT_CONSTRAINTS; }
 
     virtual void adjust_jacobian(
@@ -87,6 +89,8 @@ private:
     std::string m_darcyStoredPressure;
     std::string m_interfaceSubset;
     number m_pressureScale;
+    bool m_captureNextInterfaceDefect;
+    std::vector<number> m_interfaceDefectSums;
 };
 
 } // namespace neuro_collection

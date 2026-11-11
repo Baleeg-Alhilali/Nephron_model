@@ -5,7 +5,12 @@
 #include "lib_disc/common/multi_index.h"
 #include "lib_grid/tools/subset_group.h"
 
+#include <algorithm>
 #include <map>
+
+#ifdef UG_PARALLEL
+#include "pcl/pcl_process_communicator.h"
+#endif
 
 namespace ug {
 namespace neuro_collection {
@@ -17,7 +22,9 @@ PressureTraceConstraint<TDomain, TAlgebra>::PressureTraceConstraint(
     : m_stokesPressure(stokesPressure),
       m_darcyStoredPressure(darcyStoredPressure),
       m_interfaceSubset(interfaceSubset),
-      m_pressureScale(1.0)
+      m_pressureScale(1.0),
+      m_captureNextInterfaceDefect(false),
+      m_interfaceDefectSums(3, 0.0)
 {}
 
 template <typename TDomain, typename TAlgebra>
@@ -26,6 +33,22 @@ void PressureTraceConstraint<TDomain, TAlgebra>::set_pressure_scale(number scale
     UG_COND_THROW(scale <= 0.0,
         "PressureTraceConstraint: pressure scale must be positive.");
     m_pressureScale = scale;
+}
+
+template <typename TDomain, typename TAlgebra>
+void PressureTraceConstraint<TDomain, TAlgebra>::
+capture_next_interface_defect()
+{
+    m_captureNextInterfaceDefect = true;
+    std::fill(m_interfaceDefectSums.begin(),
+              m_interfaceDefectSums.end(), 0.0);
+}
+
+template <typename TDomain, typename TAlgebra>
+std::vector<number> PressureTraceConstraint<TDomain, TAlgebra>::
+interface_defect_sums() const
+{
+    return m_interfaceDefectSums;
 }
 
 template <typename TDomain, typename TAlgebra>
@@ -190,6 +213,38 @@ void PressureTraceConstraint<TDomain, TAlgebra>::adjust_defect(
     int, number, ConstSmartPtr<VectorTimeSeries<vector_type> >,
     const std::vector<number>*, const std::vector<number>*)
 {
+    if (m_captureNextInterfaceDefect)
+    {
+        vector_type uniqueDefect(d);
+#ifdef UG_PARALLEL
+        UG_COND_THROW(!uniqueDefect.change_storage_type(PST_UNIQUE),
+            "PressureTraceConstraint: could not create a unique interface "
+            "defect for diagnostics.");
+#endif
+
+        std::vector<std::pair<size_t, size_t> > diagnosticPairs;
+        collect_pairs(dd, diagnosticPairs);
+        number localSums[2] = {0.0, 0.0};
+        for (size_t p = 0; p < diagnosticPairs.size(); ++p)
+        {
+            localSums[0] += BlockRef(
+                uniqueDefect[diagnosticPairs[p].first], 0);
+            localSums[1] += BlockRef(
+                uniqueDefect[diagnosticPairs[p].second], 0);
+        }
+
+        number globalSums[2] = {localSums[0], localSums[1]};
+#ifdef UG_PARALLEL
+        pcl::ProcessCommunicator communicator;
+        communicator.allreduce(
+            localSums, globalSums, 2, PCL_DT_DOUBLE, PCL_RO_SUM);
+#endif
+        m_interfaceDefectSums[0] = globalSums[0];
+        m_interfaceDefectSums[1] = globalSums[1];
+        m_interfaceDefectSums[2] = globalSums[0] + globalSums[1];
+        m_captureNextInterfaceDefect = false;
+    }
+
     reduce_vector(d, dd);
     const number c = 1.0 / m_pressureScale;
     std::vector<std::pair<size_t, size_t> > pairs;

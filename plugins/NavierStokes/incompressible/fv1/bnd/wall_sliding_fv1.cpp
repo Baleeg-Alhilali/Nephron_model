@@ -333,7 +333,7 @@ add_jac_A_elem(LocalMatrix& J, const LocalVector& u, GridObject* elem, const Mat
 					for(size_t sh = 0; sh < bf->num_sh(); ++sh)
 					{
 						J(d1, bf->node_id(), d2, sh) += parallelVel(d1,d2)
-							* m_imSlidingFactor[ip] * bf->volume();
+							* bf->shape(sh) * m_imSlidingFactor[ip] * bf->volume();
 					}
 
 			// Add R_n (u.n) n to the Jacobian.  Unlike a generic Neumann
