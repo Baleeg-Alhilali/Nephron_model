@@ -110,14 +110,112 @@ struct AdaptiveNephronMeshingControls
 	number interNearDistanceFactor;
 	number interFarDistanceFactor;
 	number interFarEdgeFactor;
+	bool prismaticInter;
+	number prismaticInterThickness;
+	bool curvedPrismaticInterGenerated;
 	AdaptiveNephronMeshingControls()
 		: curvatureLimitedAnisotropy(false), minimumBendAnisotropy(1.0),
 		  bendChordErrorFactor(0.02), gradedInter(false),
 		  interNearEdgeFactor(2.0), interNearDistanceFactor(1.5),
-		  interFarDistanceFactor(6.0), interFarEdgeFactor(6.0) {}
+		  interFarDistanceFactor(6.0), interFarEdgeFactor(6.0),
+		  prismaticInter(false), prismaticInterThickness(0.0),
+		  curvedPrismaticInterGenerated(false) {}
 };
 
 static AdaptiveNephronMeshingControls g_adaptiveNephronMeshing;
+
+struct NephronGeometryPolicy
+{
+	number coordinateRelativeTolerance;
+	number containmentRelativeTolerance;
+	number parameterTolerance;
+	number mergeRadiusFactor;
+	number terminalSnapRadiusFactor;
+	number straightnessRadiusFactor;
+	number angularSpacingFactor;
+	size_t minimumInterLayers;
+	size_t maximumInterLayers;
+	number interLayersPerSurfaceEdge;
+	number interRadialGrowth;
+	NephronGeometryPolicy()
+		: coordinateRelativeTolerance(1e-10),
+		  containmentRelativeTolerance(1e-6), parameterTolerance(1e-7),
+		  mergeRadiusFactor(1e-4), terminalSnapRadiusFactor(2.0),
+		  straightnessRadiusFactor(1e-7), angularSpacingFactor(1e-5),
+		  minimumInterLayers(4), maximumInterLayers(12),
+		  interLayersPerSurfaceEdge(3.0), interRadialGrowth(2.0) {}
+};
+
+static NephronGeometryPolicy g_nephronGeometryPolicy;
+
+static number scaled_length_tolerance(number referenceScale, number localScale)
+{
+	const number scale = std::max(std::fabs(referenceScale), std::fabs(localScale));
+	return std::max(std::numeric_limits<number>::epsilon() * scale * 128.0,
+	                std::fabs(localScale)
+	                * g_nephronGeometryPolicy.coordinateRelativeTolerance);
+}
+
+void configure_nephron_geometry_policy
+(
+	number coordinateRelativeTolerance,
+	number containmentRelativeTolerance,
+	number parameterTolerance,
+	number mergeRadiusFactor,
+	number terminalSnapRadiusFactor,
+	number straightnessRadiusFactor,
+	number angularSpacingFactor,
+	size_t minimumInterLayers,
+	size_t maximumInterLayers,
+	number interLayersPerSurfaceEdge,
+	number interRadialGrowth
+)
+{
+	UG_COND_THROW(coordinateRelativeTolerance <= 0.0
+	              || containmentRelativeTolerance <= 0.0
+	              || parameterTolerance <= 0.0
+	              || coordinateRelativeTolerance > 1e-2
+	              || containmentRelativeTolerance > 1e-2
+	              || parameterTolerance > 1e-2,
+	              "Nephron geometry tolerances must lie in (0, 1e-2].");
+	UG_COND_THROW(mergeRadiusFactor <= 0.0 || terminalSnapRadiusFactor <= 0.0
+	              || straightnessRadiusFactor <= 0.0
+	              || angularSpacingFactor <= 0.0 || mergeRadiusFactor > 0.1
+	              || terminalSnapRadiusFactor > 10.0
+	              || straightnessRadiusFactor > 0.1
+	              || angularSpacingFactor > 0.1,
+	              "Nephron geometry scale factors are outside their safe ranges.");
+	UG_COND_THROW(minimumInterLayers < 2
+	              || maximumInterLayers < minimumInterLayers
+	              || maximumInterLayers > 64,
+	              "Automatic Inter layer bounds require 2 <= min <= max <= 64.");
+	UG_COND_THROW(interLayersPerSurfaceEdge <= 0.0
+	              || interLayersPerSurfaceEdge > 100.0
+	              || interRadialGrowth < 0.0 || interRadialGrowth > 20.0,
+	              "Inter layer density/growth are outside their safe ranges.");
+	g_nephronGeometryPolicy.coordinateRelativeTolerance = coordinateRelativeTolerance;
+	g_nephronGeometryPolicy.containmentRelativeTolerance = containmentRelativeTolerance;
+	g_nephronGeometryPolicy.parameterTolerance = parameterTolerance;
+	g_nephronGeometryPolicy.mergeRadiusFactor = mergeRadiusFactor;
+	g_nephronGeometryPolicy.terminalSnapRadiusFactor = terminalSnapRadiusFactor;
+	g_nephronGeometryPolicy.straightnessRadiusFactor = straightnessRadiusFactor;
+	g_nephronGeometryPolicy.angularSpacingFactor = angularSpacingFactor;
+	g_nephronGeometryPolicy.minimumInterLayers = minimumInterLayers;
+	g_nephronGeometryPolicy.maximumInterLayers = maximumInterLayers;
+	g_nephronGeometryPolicy.interLayersPerSurfaceEdge = interLayersPerSurfaceEdge;
+	g_nephronGeometryPolicy.interRadialGrowth = interRadialGrowth;
+	UG_LOGN("Nephron geometry policy: coordinateRelTol="
+	        << coordinateRelativeTolerance << ", containmentRelTol="
+	        << containmentRelativeTolerance << ", parameterTol="
+	        << parameterTolerance << ", merge/radius=" << mergeRadiusFactor
+	        << ", terminalSnap/radius=" << terminalSnapRadiusFactor
+	        << ", straightness/radius=" << straightnessRadiusFactor
+	        << ", angular/spacing=" << angularSpacingFactor
+	        << ", automatic Inter layers=" << minimumInterLayers << ".."
+	        << maximumInterLayers << ", layers/surface-edge="
+	        << interLayersPerSurfaceEdge << ", growth="
+	        << interRadialGrowth << ".");
+}
 
 
 void configure_adaptive_nephron_meshing
@@ -129,7 +227,9 @@ void configure_adaptive_nephron_meshing
 	number interNearEdgeFactor,
 	number interNearDistanceFactor,
 	number interFarDistanceFactor,
-	number interFarEdgeFactor
+	number interFarEdgeFactor,
+	bool prismaticInter,
+	number prismaticInterThickness
 )
 {
 	UG_COND_THROW(minimumBendAnisotropy < 1.0,
@@ -141,6 +241,8 @@ void configure_adaptive_nephron_meshing
 	UG_COND_THROW(interNearDistanceFactor < 0.0
 	              || interFarDistanceFactor <= interNearDistanceFactor,
 	              "Inter distance factors require 0 <= near < far.");
+	UG_COND_THROW(prismaticInterThickness < 0.0,
+	              "Prismatic Inter thickness must be non-negative.");
 	g_adaptiveNephronMeshing.curvatureLimitedAnisotropy = curvatureLimitedAnisotropy;
 	g_adaptiveNephronMeshing.minimumBendAnisotropy = minimumBendAnisotropy;
 	g_adaptiveNephronMeshing.bendChordErrorFactor = bendChordErrorFactor;
@@ -149,13 +251,19 @@ void configure_adaptive_nephron_meshing
 	g_adaptiveNephronMeshing.interNearDistanceFactor = interNearDistanceFactor;
 	g_adaptiveNephronMeshing.interFarDistanceFactor = interFarDistanceFactor;
 	g_adaptiveNephronMeshing.interFarEdgeFactor = interFarEdgeFactor;
+	g_adaptiveNephronMeshing.prismaticInter = prismaticInter;
+	g_adaptiveNephronMeshing.prismaticInterThickness = prismaticInterThickness;
+	g_adaptiveNephronMeshing.curvedPrismaticInterGenerated = false;
 	UG_LOGN("Adaptive nephron meshing: curvatureLimitedAnisotropy="
 	        << curvatureLimitedAnisotropy << ", minimumBendAnisotropy="
 	        << minimumBendAnisotropy << ", bendChordErrorFactor="
 	        << bendChordErrorFactor << ", gradedInter=" << gradedInter
 	        << ", Inter edge factors=" << interNearEdgeFactor << " -> "
 	        << interFarEdgeFactor << ", distance factors="
-	        << interNearDistanceFactor << " -> " << interFarDistanceFactor << ".");
+	        << interNearDistanceFactor << " -> " << interFarDistanceFactor
+	        << ", Inter topology=" << (prismaticInter ? "prism" : "tet")
+	        << ", curved prism thickness=" << prismaticInterThickness
+	        << ".");
 }
 
 
@@ -222,10 +330,31 @@ static void snap_refined_terminal_vertices_to_outer_wall
 		diagonal += (metadata.boxMax[d] - metadata.boxMin[d])
 			* (metadata.boxMax[d] - metadata.boxMin[d]);
 	diagonal = std::sqrt(diagonal);
-	const number numericalLengthTolerance = std::numeric_limits<number>::epsilon()
-		* diagonal * 64.0;
+	number localTerminalEdgeScale = std::numeric_limits<number>::max();
+	for (EdgeIterator eit = g.begin<Edge>(); eit != g.end<Edge>(); ++eit)
+	{
+		Edge* edge = *eit;
+		const int edgeSubset = sh.get_subset_index(edge);
+		const bool terminalEdge = edgeSubset >= 0 && edgeSubset < outerWallSubset
+			&& (edgeSubset % 6 == 4 || edgeSubset % 6 == 5);
+		const bool rimEdge = edgeSubset >= tripleJunctionBase
+			&& edgeSubset < tripleJunctionBase + (int)nephronCount;
+		const bool membraneWallEdge = edgeSubset >= membraneWallBase
+			&& edgeSubset < membraneWallBase + (int)nephronCount;
+		if (!terminalEdge && !rimEdge && !membraneWallEdge) continue;
+		const number length = VecDistance(aaPos[edge->vertex(0)], aaPos[edge->vertex(1)]);
+		if (length > 0.0) localTerminalEdgeScale = std::min(localTerminalEdgeScale, length);
+	}
+	if (!std::isfinite(localTerminalEdgeScale))
+		localTerminalEdgeScale = diagonal;
+	const number numericalLengthTolerance =
+		scaled_length_tolerance(diagonal, localTerminalEdgeScale);
 	const number maximumSnapDistance = std::max(
-		numericalLengthTolerance, diagonal * 2e-2);
+		numericalLengthTolerance, localTerminalEdgeScale
+		* g_nephronGeometryPolicy.terminalSnapRadiusFactor);
+	const number parameterTolerance = std::max(
+		std::numeric_limits<number>::epsilon() * 128.0,
+		g_nephronGeometryPolicy.parameterTolerance);
 	size_t snapped = 0;
 	for (VertexIterator vit = g.begin<Vertex>(); vit != g.end<Vertex>(); ++vit)
 	{
@@ -247,9 +376,10 @@ static void snap_refined_terminal_vertices_to_outer_wall
 		const number axial = projectorVertex ? aaSurfParams[vertex].axial : 0.5;
 		const number radial = projectorVertex ? aaSurfParams[vertex].radial : 0.0;
 		const bool terminalParamVertex = projectorVertex
-			&& radial > 1e-10
-			&& (std::fabs(axial) < 1e-10 || std::fabs(axial - 1.0) < 1e-10);
-		if (!capVertex && !rimVertex && !membraneWallVertex &&
+			&& radial > parameterTolerance
+			&& (std::fabs(axial) < parameterTolerance
+			    || std::fabs(axial - 1.0) < parameterTolerance);
+		if (!capVertex && !rimVertex &&
 		    !terminalParamVertex) continue;
 		number nearestDistance = std::numeric_limits<number>::max();
 		size_t nearestAxis = 0;
@@ -272,7 +402,7 @@ static void snap_refined_terminal_vertices_to_outer_wall
 		// strict because every one of those vertices must lie on that plane.
 		if (nearestDistance > maximumSnapDistance)
 		{
-			UG_COND_THROW(capVertex || rimVertex || membraneWallVertex,
+			UG_COND_THROW(capVertex || rimVertex,
 			              "Refined terminal vertex is too far from every OuterWall plane.");
 			continue;
 		}
@@ -3600,7 +3730,9 @@ static void create_padded_box_surface
 		}
 		typedef std::pair<uint32,int> TerminalKey;
 		std::map<TerminalKey,std::vector<Vertex*> > terminalVertices;
-		const number axialTolerance = 1e-7;
+		const number axialTolerance = std::max(
+			std::numeric_limits<number>::epsilon() * 128.0,
+			g_nephronGeometryPolicy.parameterTolerance);
 		for (VertexIterator vit = g.begin<Vertex>(); vit != g.end<Vertex>(); ++vit)
 		{
 			const NeuriteProjector::SurfaceParams& sp = (*aaSurfParams)[*vit];
@@ -3622,6 +3754,12 @@ static void create_padded_box_surface
 				if (std::fabs((number)(*aaSurfParams)[group[i]].radial)
 					< std::fabs((number)(*aaSurfParams)[center].radial))
 					center = group[i];
+			number terminalRadius = 0.0;
+			for (size_t i = 0; i < group.size(); ++i)
+				terminalRadius = std::max(terminalRadius,
+					VecDistance(aaPos[group[i]], aaPos[center]));
+			UG_COND_THROW(terminalRadius <= 0.0,
+			              "Terminal section has no positive geometric radius.");
 			number nearestDistance = std::numeric_limits<number>::max();
 			size_t nearestAxis = 0;
 			size_t nearestSide = 0;
@@ -3642,9 +3780,10 @@ static void create_padded_box_surface
 			// correction is therefore expected at the root; the long straight
 			// wall-normal tail makes this snap shape-preserving.
 			const number numericalLengthTolerance =
-				std::numeric_limits<number>::epsilon() * diagonal * 64.0;
+				scaled_length_tolerance(diagonal, terminalRadius);
 			const number maximumSnapDistance = std::max(
-				numericalLengthTolerance, diagonal * 2e-2);
+				numericalLengthTolerance,
+				terminalRadius * g_nephronGeometryPolicy.terminalSnapRadiusFactor);
 			UG_COND_THROW(nearestDistance > maximumSnapDistance,
 			              "Terminal center is " << nearestDistance
 			              << " from its nearest OuterWall plane; extension metadata and spline disagree.");
@@ -3683,9 +3822,12 @@ static void create_padded_box_surface
 			        << ", tangential center correction="
 			        << std::sqrt(VecLengthSq(tangentialShift)) << ".");
 		}
-		const number planeTolerance = std::max(
-			std::numeric_limits<number>::epsilon() * diagonal * 64.0,
-			diagonal * 1e-10);
+		number minimumBoxCell = std::numeric_limits<number>::max();
+		for (size_t d = 0; d < 3; ++d)
+			minimumBoxCell = std::min(minimumBoxCell,
+				(boxMax[d] - boxMin[d]) / static_cast<number>(n));
+		const number planeTolerance =
+			scaled_length_tolerance(diagonal, minimumBoxCell);
 		UG_LOGN("Snapped " << snappedVertices
 		        << " terminal-section vertices exactly onto OuterWall planes.");
 		for (EdgeIterator eit = g.begin<Edge>(); eit != g.end<Edge>(); ++eit)
@@ -4592,8 +4734,8 @@ static void add_inter_to_version2_nephron
 		for (size_t d = 0; d < 3; ++d)
 			recordScale = std::max(recordScale, rec.boxMax[d] - rec.boxMin[d]);
 		const number containmentTolerance = std::max(
-			std::numeric_limits<number>::epsilon() * recordScale * 64.0,
-			recordScale * 1e-6);
+			std::numeric_limits<number>::epsilon() * recordScale * 128.0,
+			recordScale * g_nephronGeometryPolicy.containmentRelativeTolerance);
 		vector3 volumeCenter(0.0);
 		for (size_t i = 0; i < rec.vrts.size(); ++i)
 			volumeCenter += aaPos[rec.vrts[i]];
@@ -4824,8 +4966,851 @@ static void add_isolated_inter_to_version2_nephron
 	Grid::VertexAttachmentAccessor<APosition>& aaPos,
 	Grid::VertexAttachmentAccessor<Attachment<NeuriteProjector::SurfaceParams> >& aaSurfParams,
 	number tetQuality,
-	bool terminalPorts = false,
-	bool conformingMembraneTransition = false
+	bool terminalPorts,
+	bool conformingMembraneTransition,
+	int sourceInnerBoundarySubset,
+	bool linkStructuredBasolateral
+);
+
+
+static std::vector<number> automatic_inter_radial_fractions
+(
+	number totalThickness,
+	number surfaceEdgeScale
+)
+{
+	UG_COND_THROW(totalThickness <= 0.0 || surfaceEdgeScale <= 0.0,
+	              "Automatic Inter grading requires positive local scales.");
+	const number requested = g_nephronGeometryPolicy.interLayersPerSurfaceEdge
+		* totalThickness / surfaceEdgeScale;
+	const size_t layerCount = std::max(
+		g_nephronGeometryPolicy.minimumInterLayers,
+		std::min(g_nephronGeometryPolicy.maximumInterLayers,
+		         (size_t)std::ceil(requested)));
+	std::vector<number> fractions(layerCount, 1.0);
+	const number growth = g_nephronGeometryPolicy.interRadialGrowth;
+	if (growth <= std::numeric_limits<number>::epsilon())
+	{
+		for (size_t i = 0; i < layerCount; ++i)
+			fractions[i] = (number)(i + 1) / (number)layerCount;
+	}
+	else
+	{
+		const number denominator = std::exp(growth) - 1.0;
+		for (size_t i = 0; i < layerCount; ++i)
+		{
+			const number t = (number)(i + 1) / (number)layerCount;
+			fractions[i] = (std::exp(growth * t) - 1.0) / denominator;
+		}
+	}
+	fractions.back() = 1.0;
+	return fractions;
+}
+
+
+static void add_straight_prismatic_inter_to_version2_nephron
+(
+	Grid& g,
+	SubsetHandler& sh,
+	SubsetHandler& psh,
+	Grid::VertexAttachmentAccessor<APosition>& aaPos,
+	Grid::VertexAttachmentAccessor<Attachment<NeuriteProjector::SurfaceParams> >&
+		aaSurfParams,
+	const OuterWallTerminalMetadata& terminalMetadata,
+	number boxPadding
+)
+{
+	UG_COND_THROW(!terminalMetadata.hasFixedBox ||
+	              !terminalMetadata.terminalsOnOuterWall,
+	              "Prismatic Inter requires fixed OuterWall bounds and terminal "
+	              "ports on the two end planes.");
+
+	// Sweep one fixed-connectivity 2-D triangulation through every Basolateral
+	// axial station. Group the existing projector-backed ring vertices by their
+	// exact axial parameter, then sort by the transported projector angle.
+	std::map<float, std::set<Vertex*> > ringVertexSets;
+	std::vector<Face*> basolateralQuads;
+	for (FaceIterator fit = sh.begin<Face>(2); fit != sh.end<Face>(2); ++fit)
+	{
+		Face* face = *fit;
+		if (face->num_vertices() != 4) continue;
+		basolateralQuads.push_back(face);
+		for (size_t i = 0; i < 4; ++i)
+		{
+			Vertex* vertex = face->vertex(i);
+			ringVertexSets[aaSurfParams[vertex].axial].insert(vertex);
+		}
+	}
+	UG_COND_THROW(ringVertexSets.size() < 2 || basolateralQuads.empty(),
+	              "Prismatic Inter found no swept Basolateral quadrilateral mesh.");
+
+	std::vector<std::vector<Vertex*> > rings;
+	std::vector<float> ringAxial;
+	for (std::map<float,std::set<Vertex*> >::const_iterator it =
+	     ringVertexSets.begin(); it != ringVertexSets.end(); ++it)
+	{
+		std::vector<Vertex*> ring(it->second.begin(), it->second.end());
+		vector3 localCenter(0.0);
+		for (size_t i = 0; i < ring.size(); ++i) localCenter += aaPos[ring[i]];
+		localCenter *= 1.0 / ring.size();
+		std::sort(ring.begin(), ring.end(), [&] (Vertex* a, Vertex* b)
+		{
+			number angleA = aaSurfParams[a].angular;
+			number angleB = aaSurfParams[b].angular;
+			if (angleA < 0.0) angleA += 2.0 * PI;
+			if (angleB < 0.0) angleB += 2.0 * PI;
+			return angleA < angleB;
+		});
+		rings.push_back(ring);
+		ringAxial.push_back(it->first);
+	}
+	const size_t angularCount = rings[0].size();
+	UG_COND_THROW(angularCount < 4,
+	              "Prismatic Inter requires at least four angular vertices.");
+	// Independent angular sorting can rotate the 0/2pi seam between curved
+	// stations. Propagate the first ring's ordering through the actual
+	// Basolateral quad topology: the corresponding next-station vertex occurs
+	// in both quads incident to a given current-station vertex, while its two
+	// neighbors occur only once.
+	for (size_t s = 1; s < rings.size(); ++s)
+	{
+		std::set<Vertex*> nextSet(rings[s].begin(), rings[s].end());
+		std::vector<Vertex*> orderedNext(angularCount, NULL);
+		std::set<Vertex*> usedNext;
+		for (size_t i = 0; i < angularCount; ++i)
+		{
+			std::map<Vertex*, size_t> candidateCount;
+			for (size_t f = 0; f < basolateralQuads.size(); ++f)
+			{
+				Face* face = basolateralQuads[f];
+				bool containsCurrent = false;
+				for (size_t v = 0; v < face->num_vertices(); ++v)
+					containsCurrent = containsCurrent ||
+						face->vertex(v) == rings[s-1][i];
+				if (!containsCurrent) continue;
+				for (size_t v = 0; v < face->num_vertices(); ++v)
+					if (nextSet.count(face->vertex(v)))
+						++candidateCount[face->vertex(v)];
+			}
+			Vertex* match = NULL;
+			size_t bestCount = 0;
+			bool tied = false;
+			for (std::map<Vertex*,size_t>::const_iterator it = candidateCount.begin();
+			     it != candidateCount.end(); ++it)
+			{
+				if (it->second > bestCount)
+				{
+					match = it->first;
+					bestCount = it->second;
+					tied = false;
+				}
+				else if (it->second == bestCount)
+					tied = true;
+			}
+			UG_COND_THROW(!match || bestCount < 2 || tied || usedNext.count(match),
+			              "Could not propagate one-to-one Basolateral ring ordering.");
+			orderedNext[i] = match;
+			usedNext.insert(match);
+		}
+		UG_COND_THROW(usedNext.size() != angularCount,
+		              "Basolateral topology did not cover the complete next ring.");
+		rings[s].swap(orderedNext);
+	}
+	std::vector<vector3> ringCenters(rings.size(), vector3(0.0));
+	const number angularTolerance = std::max(
+		std::numeric_limits<number>::epsilon() * 128.0,
+		(2.0 * PI / (number)angularCount)
+		* g_nephronGeometryPolicy.angularSpacingFactor);
+	for (size_t s = 0; s < rings.size(); ++s)
+	{
+		for (size_t i = 0; i < rings[s].size(); ++i)
+			ringCenters[s] += aaPos[rings[s][i]];
+		ringCenters[s] *= 1.0 / rings[s].size();
+	}
+	number surfaceEdgeScale = 0.0;
+	number tubeRadiusScale = 0.0;
+	size_t surfaceEdgeCount = 0;
+	for (size_t s = 0; s < rings.size(); ++s)
+		for (size_t i = 0; i < rings[s].size(); ++i)
+		{
+			surfaceEdgeScale += VecDistance(
+				aaPos[rings[s][i]],
+				aaPos[rings[s][(i + 1) % rings[s].size()]]);
+			tubeRadiusScale += VecDistance(aaPos[rings[s][i]], ringCenters[s]);
+			++surfaceEdgeCount;
+		}
+	UG_COND_THROW(surfaceEdgeCount == 0,
+	              "Cannot derive local nephron scales from empty Basolateral rings.");
+	surfaceEdgeScale /= surfaceEdgeCount;
+	tubeRadiusScale /= surfaceEdgeCount;
+	UG_COND_THROW(surfaceEdgeScale <= 0.0 || tubeRadiusScale <= 0.0,
+	              "Basolateral rings have a non-positive local scale.");
+	for (size_t s = 0; s < rings.size(); ++s)
+	{
+		UG_COND_THROW(rings[s].size() != angularCount,
+		              "Prismatic Inter requires the same angular ring at every "
+		              "axial station.");
+	}
+	UG_COND_THROW(basolateralQuads.size() !=
+	              (rings.size() - 1) * angularCount,
+	              "Basolateral quadrilateral count does not match the swept rings.");
+
+	const number boxSpan = std::max(
+		terminalMetadata.boxMax[0] - terminalMetadata.boxMin[0],
+		terminalMetadata.boxMax[1] - terminalMetadata.boxMin[1]);
+	const number straightTolerance = std::max(
+		scaled_length_tolerance(boxSpan, tubeRadiusScale),
+		tubeRadiusScale * g_nephronGeometryPolicy.straightnessRadiusFactor);
+	bool straightZ = true;
+	for (size_t s = 1; s < ringCenters.size(); ++s)
+		straightZ = straightZ &&
+			std::fabs(ringCenters[s][0] - ringCenters[0][0]) <= straightTolerance &&
+			std::fabs(ringCenters[s][1] - ringCenters[0][1]) <= straightTolerance;
+
+	if (!straightZ)
+	{
+		g_adaptiveNephronMeshing.curvedPrismaticInterGenerated = true;
+		UG_COND_THROW(boxPadding <= 0.0,
+		              "Curved prismatic Inter requires positive radial padding.");
+		const number curvedInterThickness =
+			g_adaptiveNephronMeshing.prismaticInterThickness > 0.0
+			? std::min(boxPadding,
+			           g_adaptiveNephronMeshing.prismaticInterThickness)
+			: boxPadding;
+		std::vector<Face*> oldOuterFaces(sh.begin<Face>(4), sh.end<Face>(4));
+
+		const std::vector<number> radialFractions =
+			automatic_inter_radial_fractions(
+				curvedInterThickness, surfaceEdgeScale);
+		const size_t addedLayerCount = radialFractions.size();
+		const size_t layerCount = addedLayerCount + 1;
+		const size_t outerLayer = layerCount - 1;
+		std::vector<std::vector<Vertex*> > stationNodes(
+			rings.size(), std::vector<Vertex*>(layerCount * angularCount, NULL));
+
+		for (size_t s = 0; s < rings.size(); ++s)
+		{
+			const vector3& center = ringCenters[s];
+			for (size_t i = 0; i < angularCount; ++i)
+			{
+				stationNodes[s][i] = rings[s][i];
+				vector3 direction;
+				VecSubtract(direction, aaPos[rings[s][i]], center);
+				const number innerDistance = VecLength(direction);
+				UG_COND_THROW(innerDistance <= 0.0,
+				              "Zero-radius Basolateral vertex in curved prismatic Inter.");
+				direction *= 1.0 / innerDistance;
+				for (size_t layer = 1; layer < layerCount; ++layer)
+				{
+					RegularVertex* vertex = *g.create<RegularVertex>();
+					const number distance = innerDistance +
+						radialFractions[layer - 1] * curvedInterThickness;
+					VecScaleAdd(aaPos[vertex], 1.0, center, distance, direction);
+					aaSurfParams[vertex] = aaSurfParams[rings[s][i]];
+					aaSurfParams[vertex].radial = (float)(distance / innerDistance);
+					sh.assign_subset(vertex, 5);
+					psh.assign_subset(vertex, 0);
+					stationNodes[s][layer * angularCount + i] = vertex;
+				}
+			}
+		}
+
+		typedef std::array<size_t,4> CurvedInterQuad;
+		std::vector<CurvedInterQuad> crossSectionQuads;
+		for (size_t layer = 0; layer + 1 < layerCount; ++layer)
+		{
+			const size_t inner = layer * angularCount;
+			const size_t outer = (layer + 1) * angularCount;
+			for (size_t i = 0; i < angularCount; ++i)
+			{
+				const size_t j = (i + 1) % angularCount;
+				crossSectionQuads.push_back(CurvedInterQuad{{
+					inner + i, outer + i, outer + j, inner + j}});
+			}
+		}
+
+		for (size_t q = 0; q < crossSectionQuads.size(); ++q)
+		{
+			const CurvedInterQuad& quad = crossSectionQuads[q];
+			vector3 ab, ac, cross;
+			VecSubtract(ab, aaPos[stationNodes[0][quad[1]]],
+			            aaPos[stationNodes[0][quad[0]]]);
+			VecSubtract(ac, aaPos[stationNodes[0][quad[3]]],
+			            aaPos[stationNodes[0][quad[0]]]);
+			VecCross(cross, ab, ac);
+			UG_COND_THROW(VecLength(cross) <= straightTolerance * straightTolerance,
+			              "Degenerate quadrilateral in curved Inter cross-section.");
+		}
+
+		std::vector<Volume*> interNearVolumes;
+		std::set<Face*> transitionOuterFaces;
+		std::vector<std::array<Vertex*,8> > deferredTransitionCells;
+		auto useACDiagonal = [] (Vertex* a, Vertex* b, Vertex* c, Vertex* d)
+		{
+			std::array<std::uintptr_t,2> ac = {{
+				reinterpret_cast<std::uintptr_t>(a),
+				reinterpret_cast<std::uintptr_t>(c)}};
+			std::array<std::uintptr_t,2> bd = {{
+				reinterpret_cast<std::uintptr_t>(b),
+				reinterpret_cast<std::uintptr_t>(d)}};
+			std::sort(ac.begin(), ac.end());
+			std::sort(bd.begin(), bd.end());
+			return ac < bd;
+		};
+		auto addTriangulatedCone = [&] (Vertex* center, Vertex* a, Vertex* b,
+		                                  Vertex* c, Vertex* d,
+		                                  bool recordOuter)
+		{
+			auto triangleFace = [&] (Vertex* x, Vertex* y, Vertex* z) -> Face*
+			{
+				FaceDescriptor fd; fd.set_num_vertices(3);
+				fd.set_vertex(0,x); fd.set_vertex(1,y); fd.set_vertex(2,z);
+				return g.get_face(fd);
+			};
+			Face* f0;
+			Face* f1;
+			Tetrahedron* t0;
+			Tetrahedron* t1;
+			bool useAC = useACDiagonal(a,b,c,d);
+			if (recordOuter)
+			{
+				Face* ac0 = triangleFace(a,b,c);
+				Face* ac1 = triangleFace(a,c,d);
+				Face* bd0 = triangleFace(a,b,d);
+				Face* bd1 = triangleFace(b,c,d);
+				const bool recoveredAC = ac0 && ac1
+					&& NumAssociatedVolumes(g, ac0) == 1
+					&& NumAssociatedVolumes(g, ac1) == 1;
+				const bool recoveredBD = bd0 && bd1
+					&& NumAssociatedVolumes(g, bd0) == 1
+					&& NumAssociatedVolumes(g, bd1) == 1;
+				UG_COND_THROW(recoveredAC == recoveredBD,
+				              "Could not select the recovered tetrahedral diagonal "
+				              "for a hybrid transition quadrilateral.");
+				useAC = recoveredAC;
+			}
+			if (useAC)
+			{
+				t0 = *g.create<Tetrahedron>(TetrahedronDescriptor(center,a,b,c));
+				t1 = *g.create<Tetrahedron>(TetrahedronDescriptor(center,a,c,d));
+				FaceDescriptor fd0; fd0.set_num_vertices(3);
+				fd0.set_vertex(0,a); fd0.set_vertex(1,b); fd0.set_vertex(2,c);
+				FaceDescriptor fd1; fd1.set_num_vertices(3);
+				fd1.set_vertex(0,a); fd1.set_vertex(1,c); fd1.set_vertex(2,d);
+				f0 = g.get_face(fd0); f1 = g.get_face(fd1);
+			}
+			else
+			{
+				t0 = *g.create<Tetrahedron>(TetrahedronDescriptor(center,a,b,d));
+				t1 = *g.create<Tetrahedron>(TetrahedronDescriptor(center,b,c,d));
+				FaceDescriptor fd0; fd0.set_num_vertices(3);
+				fd0.set_vertex(0,a); fd0.set_vertex(1,b); fd0.set_vertex(2,d);
+				FaceDescriptor fd1; fd1.set_num_vertices(3);
+				fd1.set_vertex(0,b); fd1.set_vertex(1,c); fd1.set_vertex(2,d);
+				f0 = g.get_face(fd0); f1 = g.get_face(fd1);
+			}
+			sh.assign_subset(t0, 5); sh.assign_subset(t1, 5);
+			psh.assign_subset(t0, 0); psh.assign_subset(t1, 0);
+			interNearVolumes.push_back(t0);
+			interNearVolumes.push_back(t1);
+			if (recordOuter)
+			{
+				UG_COND_THROW(!f0 || !f1,
+				              "Missing triangular outer face of hybrid Inter transition.");
+				transitionOuterFaces.insert(f0);
+				transitionOuterFaces.insert(f1);
+			}
+		};
+
+		for (size_t s = 0; s + 1 < stationNodes.size(); ++s)
+			for (size_t q = 0; q < crossSectionQuads.size(); ++q)
+			{
+				const CurvedInterQuad& quad = crossSectionQuads[q];
+				Vertex* v[8] = {
+					stationNodes[s][quad[0]], stationNodes[s][quad[1]],
+					stationNodes[s][quad[2]], stationNodes[s][quad[3]],
+					stationNodes[s+1][quad[0]], stationNodes[s+1][quad[1]],
+					stationNodes[s+1][quad[2]], stationNodes[s+1][quad[3]]};
+				const bool transitionCell =
+					q >= (addedLayerCount - 1) * angularCount;
+				if (!transitionCell)
+				{
+					// Split the radial-angular quadrilateral once and sweep its two
+					// triangles along the trace. Each sector therefore consists of two
+					// curved prisms, while its inner radial side remains one ordinary
+					// Basolateral quadrilateral shared with the Membrane hexahedron.
+					Prism* p0 = *g.create<Prism>(PrismDescriptor(
+						v[0],v[1],v[2],v[4],v[5],v[6]));
+					Prism* p1 = *g.create<Prism>(PrismDescriptor(
+						v[0],v[2],v[3],v[4],v[6],v[7]));
+					sh.assign_subset(p0, 5); sh.assign_subset(p1, 5);
+					psh.assign_subset(p0, 0); psh.assign_subset(p1, 0);
+					interNearVolumes.push_back(p0);
+					interNearVolumes.push_back(p1);
+					continue;
+				}
+				std::array<Vertex*,8> rec = {{v[0],v[1],v[2],v[3],
+				                              v[4],v[5],v[6],v[7]}};
+				deferredTransitionCells.push_back(rec);
+				Face* f0;
+				Face* f1;
+				if (useACDiagonal(v[1],v[5],v[6],v[2]))
+				{
+					f0 = *g.create<Triangle>(TriangleDescriptor(v[1],v[5],v[6]));
+					f1 = *g.create<Triangle>(TriangleDescriptor(v[1],v[6],v[2]));
+				}
+				else
+				{
+					f0 = *g.create<Triangle>(TriangleDescriptor(v[1],v[5],v[2]));
+					f1 = *g.create<Triangle>(TriangleDescriptor(v[5],v[6],v[2]));
+				}
+				sh.assign_subset(f0, 6); sh.assign_subset(f1, 6);
+				psh.assign_subset(f0, 1); psh.assign_subset(f1, 1);
+				transitionOuterFaces.insert(f0);
+				transitionOuterFaces.insert(f1);
+			}
+		FixOrientation(g, interNearVolumes.begin(), interNearVolumes.end(), aaPos);
+
+		for (size_t s = 0; s + 1 < rings.size(); ++s)
+			for (size_t i = 0; i < angularCount; ++i)
+			{
+				const size_t j = (i + 1) % angularCount;
+				FaceDescriptor fd;
+				fd.set_num_vertices(4);
+				fd.set_vertex(0, rings[s][i]);
+				fd.set_vertex(1, rings[s][j]);
+				fd.set_vertex(2, rings[s+1][j]);
+				fd.set_vertex(3, rings[s+1][i]);
+				Face* face = g.get_face(fd);
+				UG_COND_THROW(!face || NumAssociatedVolumes(g, face) != 2,
+				              "Curved prismatic Basolateral face is not shared.");
+				sh.assign_subset(face, 2);
+				psh.assign_subset(face, 0);
+			}
+
+
+		// Rebuild the two portal patches around the larger transition tube while
+		// retaining the exact original fixed box bounds. During this operation the
+		// transition shell temporarily plays the role of the portal rim.
+		std::vector<Face*> physicalBasolateral(sh.begin<Face>(2), sh.end<Face>(2));
+		for (size_t i = 0; i < physicalBasolateral.size(); ++i)
+		{
+			sh.assign_subset(physicalBasolateral[i], 10);
+			Grid::traits<Edge>::secure_container edges;
+			g.associated_elements(edges, physicalBasolateral[i]);
+			for (size_t e = 0; e < edges.size(); ++e) sh.assign_subset(edges[e], 10);
+			for (size_t v = 0; v < physicalBasolateral[i]->num_vertices(); ++v)
+				sh.assign_subset(physicalBasolateral[i]->vertex(v), 10);
+		}
+		for (std::set<Face*>::iterator it = transitionOuterFaces.begin();
+		     it != transitionOuterFaces.end(); ++it)
+		{
+			sh.assign_subset(*it, 2);
+			Grid::traits<Edge>::secure_container edges;
+			g.associated_elements(edges, *it);
+			for (size_t e = 0; e < edges.size(); ++e) sh.assign_subset(edges[e], 2);
+			for (size_t v = 0; v < (*it)->num_vertices(); ++v)
+				sh.assign_subset((*it)->vertex(v), 2);
+		}
+		g.erase(oldOuterFaces.begin(), oldOuterFaces.end());
+		std::vector<Edge*> orphanBoxEdges;
+		for (EdgeIterator eit = g.begin<Edge>(); eit != g.end<Edge>(); ++eit)
+			if (NumAssociatedFaces(g, *eit) == 0) orphanBoxEdges.push_back(*eit);
+		g.erase(orphanBoxEdges.begin(), orphanBoxEdges.end());
+		std::vector<Vertex*> orphanBoxVertices;
+		for (VertexIterator vit = g.begin<Vertex>(); vit != g.end<Vertex>(); ++vit)
+			if (NumAssociatedEdges(g, *vit) == 0) orphanBoxVertices.push_back(*vit);
+		g.erase(orphanBoxVertices.begin(), orphanBoxVertices.end());
+
+		// The terminal annulus of the near-field layer is already occupied by
+		// Inter cells. It is intentionally not part of the outer-bulk PLC; only
+		// the transition side wall and the rebuilt box patch meet at the portal rim.
+		create_padded_box_surface(g, sh, aaPos, boxPadding, 4, 4,
+		                          &terminalMetadata, &aaSurfParams);
+		for (size_t i = 0; i < physicalBasolateral.size(); ++i)
+		{
+			sh.assign_subset(physicalBasolateral[i], 2);
+			psh.assign_subset(physicalBasolateral[i], 0);
+			Grid::traits<Edge>::secure_container edges;
+			g.associated_elements(edges, physicalBasolateral[i]);
+			for (size_t e = 0; e < edges.size(); ++e)
+			{
+				sh.assign_subset(edges[e], 2);
+				psh.assign_subset(edges[e], 0);
+			}
+			for (size_t v = 0; v < physicalBasolateral[i]->num_vertices(); ++v)
+			{
+				sh.assign_subset(physicalBasolateral[i]->vertex(v), 2);
+				psh.assign_subset(physicalBasolateral[i]->vertex(v), 0);
+			}
+		}
+		for (std::set<Face*>::iterator it = transitionOuterFaces.begin();
+		     it != transitionOuterFaces.end(); ++it)
+			sh.assign_subset(*it, 6);
+
+		add_isolated_inter_to_version2_nephron(g, sh, psh, aaPos,
+			aaSurfParams, 2.0, true, false, 6, false);
+		transitionOuterFaces.clear();
+
+		// Create the quad-to-triangle transition only after the tetrahedral bulk.
+		// UG4 then reuses TetGen's boundary triangles as ordinary faces instead of
+		// creating coincident constrained counterparts.
+		for (size_t cell = 0; cell < deferredTransitionCells.size(); ++cell)
+		{
+			const std::array<Vertex*,8>& v = deferredTransitionCells[cell];
+			RegularVertex* center = *g.create<RegularVertex>();
+			aaPos[center] = vector3(0.0);
+			for (size_t i = 0; i < 8; ++i) aaPos[center] += aaPos[v[i]];
+			aaPos[center] *= 0.125;
+			aaSurfParams[center] = aaSurfParams[v[0]];
+			aaSurfParams[center].radial = 0.0f;
+			for (size_t i = 0; i < 8; ++i)
+				aaSurfParams[center].radial += 0.125f * aaSurfParams[v[i]].radial;
+			sh.assign_subset(center, 5);
+			psh.assign_subset(center, 0);
+			Pyramid* pyramid = *g.create<Pyramid>(
+				PyramidDescriptor(v[0],v[3],v[7],v[4],center));
+			sh.assign_subset(pyramid, 5);
+			psh.assign_subset(pyramid, 0);
+			interNearVolumes.push_back(pyramid);
+			addTriangulatedCone(center,v[1],v[5],v[6],v[2],true);
+			addTriangulatedCone(center,v[0],v[1],v[2],v[3],false);
+			addTriangulatedCone(center,v[4],v[7],v[6],v[5],false);
+			addTriangulatedCone(center,v[0],v[4],v[5],v[1],false);
+			addTriangulatedCone(center,v[3],v[2],v[6],v[7],false);
+		}
+		FixOrientation(g, interNearVolumes.begin(), interNearVolumes.end(), aaPos);
+		size_t transitionAdjacency[4] = {0,0,0,0};
+		for (std::set<Face*>::iterator it = transitionOuterFaces.begin();
+		     it != transitionOuterFaces.end(); ++it)
+		{
+			const size_t n = NumAssociatedVolumes(g, *it);
+			++transitionAdjacency[std::min<size_t>(n,3)];
+		}
+		UG_LOGN("Hybrid transition face-object adjacency 0/1/2/3+: "
+		        << transitionAdjacency[0] << "/" << transitionAdjacency[1]
+		        << "/" << transitionAdjacency[2] << "/"
+		        << transitionAdjacency[3] << ".");
+
+		sh.set_subset_name("Membrane", 0);
+		sh.set_subset_name("Lumen", 1);
+		sh.set_subset_name("Basolateral", 2);
+		sh.set_subset_name("Apical", 3);
+		sh.set_subset_name("OuterWall", 4);
+		sh.set_subset_name("Inter", 5);
+		UG_LOGN("Added hybrid conforming Inter: axial stations="
+		        << rings.size() << ", angular vertices=" << angularCount
+		        << ", near-field thickness=" << curvedInterThickness
+		        << ", near-field volumes=" << interNearVolumes.size()
+		        << ", triangular transition faces="
+		        << transitionOuterFaces.size() << ".");
+		return;
+	}
+
+	for (size_t s = 0; s < rings.size(); ++s)
+	{
+		for (size_t i = 0; i < angularCount; ++i)
+		{
+			number angle = std::atan2(
+				aaPos[rings[s][i]][1] - ringCenters[s][1],
+				aaPos[rings[s][i]][0] - ringCenters[s][0]);
+			number referenceAngle = std::atan2(
+				aaPos[rings[0][i]][1] - ringCenters[0][1],
+				aaPos[rings[0][i]][0] - ringCenters[0][0]);
+			const number angularDifference = std::fabs(std::atan2(
+				std::sin(angle - referenceAngle),
+				std::cos(angle - referenceAngle)));
+			UG_COND_THROW(angularDifference > angularTolerance,
+			              "Prismatic Inter is restricted to a non-twisting straight "
+			              "tube in this prototype.");
+		}
+	}
+	for (size_t s = 1; s < ringCenters.size(); ++s)
+	{
+		UG_COND_THROW(std::fabs(ringCenters[s][0] - ringCenters[0][0]) >
+		              straightTolerance ||
+		              std::fabs(ringCenters[s][1] - ringCenters[0][1]) >
+		              straightTolerance,
+		              "Prismatic Inter prototype supports only a z-aligned straight "
+		              "tube with a fixed cross-section center.");
+	}
+	UG_COND_THROW(std::fabs(ringCenters.front()[2] -
+	              terminalMetadata.boxMin[2]) > straightTolerance ||
+	              std::fabs(ringCenters.back()[2] -
+	              terminalMetadata.boxMax[2]) > straightTolerance,
+	              "Prismatic Inter axial stations do not span the two OuterWall "
+	              "terminal planes.");
+
+	// Remove the old box surface. The prism sweep below recreates all six box
+	// planes as ordinary one-sided Inter faces, including the two port planes.
+	std::vector<Face*> oldOuterFaces(sh.begin<Face>(4), sh.end<Face>(4));
+	g.erase(oldOuterFaces.begin(), oldOuterFaces.end());
+
+	// Seven graded radial layers retain a near-membrane scale comparable to the
+	// Basolateral edge length while reaching the rectangular far boundary. The
+	// final four corner triangles make the outer polygon exactly the original box,
+	// rather than a chordal polygon inscribed in it.
+	number meanRadialClearance = 0.0;
+	for (size_t i = 0; i < angularCount; ++i)
+	{
+		vector3 direction;
+		VecSubtract(direction, aaPos[rings[0][i]], ringCenters[0]);
+		direction[2] = 0.0;
+		const number directionLength = VecLength(direction);
+		UG_COND_THROW(directionLength <= 0.0,
+		              "Zero-radius Basolateral vertex while deriving Inter grading.");
+		direction *= 1.0 / directionLength;
+		number hitDistance = std::numeric_limits<number>::max();
+		if (direction[0] > angularTolerance)
+			hitDistance = std::min(hitDistance,
+				(terminalMetadata.boxMax[0] - ringCenters[0][0]) / direction[0]);
+		else if (direction[0] < -angularTolerance)
+			hitDistance = std::min(hitDistance,
+				(terminalMetadata.boxMin[0] - ringCenters[0][0]) / direction[0]);
+		if (direction[1] > angularTolerance)
+			hitDistance = std::min(hitDistance,
+				(terminalMetadata.boxMax[1] - ringCenters[0][1]) / direction[1]);
+		else if (direction[1] < -angularTolerance)
+			hitDistance = std::min(hitDistance,
+				(terminalMetadata.boxMin[1] - ringCenters[0][1]) / direction[1]);
+		meanRadialClearance += hitDistance - directionLength;
+	}
+	meanRadialClearance /= angularCount;
+	const std::vector<number> radialFractions =
+		automatic_inter_radial_fractions(meanRadialClearance, surfaceEdgeScale);
+	const size_t addedLayerCount = radialFractions.size();
+	const size_t layerCount = addedLayerCount + 1;
+	const size_t outerLayer = layerCount - 1;
+	const number twoPi = 2.0 * PI;
+
+	std::vector<number> angles(angularCount);
+	for (size_t i = 0; i < angularCount; ++i)
+	{
+		angles[i] = std::atan2(
+			aaPos[rings[0][i]][1] - ringCenters[0][1],
+			aaPos[rings[0][i]][0] - ringCenters[0][0]);
+		while (angles[i] < 0.0) angles[i] += twoPi;
+		while (angles[i] >= twoPi) angles[i] -= twoPi;
+	}
+
+	const vector3& referenceCenter = ringCenters[0];
+	vector3 corners[4] = {
+		vector3(terminalMetadata.boxMin[0], terminalMetadata.boxMin[1], 0.0),
+		vector3(terminalMetadata.boxMax[0], terminalMetadata.boxMin[1], 0.0),
+		vector3(terminalMetadata.boxMax[0], terminalMetadata.boxMax[1], 0.0),
+		vector3(terminalMetadata.boxMin[0], terminalMetadata.boxMax[1], 0.0)
+	};
+	std::vector<number> cornerAngles(4);
+	for (size_t c = 0; c < 4; ++c)
+	{
+		cornerAngles[c] = std::atan2(corners[c][1] - referenceCenter[1],
+		                               corners[c][0] - referenceCenter[0]);
+		if (cornerAngles[c] < 0.0) cornerAngles[c] += twoPi;
+	}
+
+	// Abstract 2-D node indices are identical at every axial station. The first
+	// layer reuses Basolateral vertices; later nodes are newly created Inter
+	// vertices. Corner nodes are appended unless an angular ray already hits the
+	// corner exactly.
+	std::vector<size_t> cornerNode(4, std::numeric_limits<size_t>::max());
+	std::vector<int> cornerSector(4, -1);
+	const size_t regularNodeCount = layerCount * angularCount;
+	size_t abstractNodeCount = regularNodeCount;
+	for (size_t c = 0; c < 4; ++c)
+	{
+		for (size_t i = 0; i < angularCount; ++i)
+		{
+			const number angularDistance = std::fabs(std::atan2(
+				std::sin(cornerAngles[c] - angles[i]),
+				std::cos(cornerAngles[c] - angles[i])));
+			if (angularDistance < angularTolerance)
+			{
+				cornerNode[c] = outerLayer * angularCount + i;
+				break;
+			}
+		}
+		if (cornerNode[c] != std::numeric_limits<size_t>::max()) continue;
+		cornerNode[c] = abstractNodeCount++;
+		for (size_t i = 0; i < angularCount; ++i)
+		{
+			const size_t j = (i + 1) % angularCount;
+			number a = angles[i];
+			number b = angles[j];
+			if (j == 0 || b <= a) b += twoPi;
+			number x = cornerAngles[c];
+			if (x <= a) x += twoPi;
+			if (x > a + angularTolerance && x < b - angularTolerance)
+			{
+				cornerSector[c] = (int)i;
+				break;
+			}
+		}
+		UG_COND_THROW(cornerSector[c] < 0,
+		              "Could not place a rectangular OuterWall corner between "
+		              "two prismatic angular rays.");
+	}
+
+	std::vector<std::vector<Vertex*> > stationNodes(
+		rings.size(), std::vector<Vertex*>(abstractNodeCount, NULL));
+	for (size_t s = 0; s < rings.size(); ++s)
+	{
+		const vector3& center = ringCenters[s];
+		for (size_t i = 0; i < angularCount; ++i)
+		{
+			stationNodes[s][i] = rings[s][i];
+			vector3 direction;
+			VecSubtract(direction, aaPos[rings[s][i]], center);
+			direction[2] = 0.0;
+			const number directionLength = VecLength(direction);
+			UG_COND_THROW(directionLength <= 0.0,
+			              "Zero-radius Basolateral vertex in prismatic Inter.");
+			direction *= 1.0 / directionLength;
+			number hitDistance = std::numeric_limits<number>::max();
+			if (direction[0] > angularTolerance)
+				hitDistance = std::min(hitDistance,
+					(terminalMetadata.boxMax[0] - center[0]) / direction[0]);
+			else if (direction[0] < -angularTolerance)
+				hitDistance = std::min(hitDistance,
+					(terminalMetadata.boxMin[0] - center[0]) / direction[0]);
+			if (direction[1] > angularTolerance)
+				hitDistance = std::min(hitDistance,
+					(terminalMetadata.boxMax[1] - center[1]) / direction[1]);
+			else if (direction[1] < -angularTolerance)
+				hitDistance = std::min(hitDistance,
+					(terminalMetadata.boxMin[1] - center[1]) / direction[1]);
+			UG_COND_THROW(!std::isfinite(hitDistance) ||
+			              hitDistance <= directionLength,
+			              "OuterWall ray does not extend beyond Basolateral.");
+
+			for (size_t layer = 1; layer < layerCount; ++layer)
+			{
+				RegularVertex* vertex = *g.create<RegularVertex>();
+				const number distance = directionLength +
+					radialFractions[layer - 1] *
+					(hitDistance - directionLength);
+				VecScaleAdd(aaPos[vertex], 1.0, center, distance, direction);
+				aaSurfParams[vertex] = aaSurfParams[rings[s][i]];
+				aaSurfParams[vertex].radial =
+					(float)(distance / directionLength);
+				sh.assign_subset(vertex, 5);
+				psh.assign_subset(vertex, 1);
+				stationNodes[s][layer * angularCount + i] = vertex;
+			}
+		}
+		for (size_t c = 0; c < 4; ++c)
+		{
+			if (cornerNode[c] < regularNodeCount) continue;
+			RegularVertex* vertex = *g.create<RegularVertex>();
+			aaPos[vertex] = vector3(corners[c][0], corners[c][1], center[2]);
+			aaSurfParams[vertex] = aaSurfParams[rings[s][0]];
+			aaSurfParams[vertex].angular = (float)cornerAngles[c];
+			aaSurfParams[vertex].radial = 2.0f;
+			sh.assign_subset(vertex, 5);
+			psh.assign_subset(vertex, 1);
+			stationNodes[s][cornerNode[c]] = vertex;
+		}
+	}
+
+	typedef std::array<size_t,3> PrismTriangle;
+	std::vector<PrismTriangle> crossSectionTriangles;
+	for (size_t layer = 0; layer + 1 < layerCount; ++layer)
+	{
+		const size_t inner = layer * angularCount;
+		const size_t outer = (layer + 1) * angularCount;
+		for (size_t i = 0; i < angularCount; ++i)
+		{
+			const size_t j = (i + 1) % angularCount;
+			crossSectionTriangles.push_back(PrismTriangle{{
+				inner + i, outer + i, inner + j}});
+			crossSectionTriangles.push_back(PrismTriangle{{
+				inner + j, outer + i, outer + j}});
+		}
+	}
+	for (size_t c = 0; c < 4; ++c)
+	{
+		if (cornerSector[c] < 0) continue;
+		const size_t i = (size_t)cornerSector[c];
+		const size_t j = (i + 1) % angularCount;
+		crossSectionTriangles.push_back(PrismTriangle{{
+			outerLayer * angularCount + i, cornerNode[c],
+			outerLayer * angularCount + j}});
+	}
+
+	// Normalize every 2-D triangle to counter-clockwise order. Sweeping the same
+	// oriented connectivity through consecutive z stations gives one conforming
+	// triangular prism per cross-section triangle and preserves each original
+	// Basolateral quad as a rectangular prism face.
+	for (size_t t = 0; t < crossSectionTriangles.size(); ++t)
+	{
+		PrismTriangle& tri = crossSectionTriangles[t];
+		const vector3& a = aaPos[stationNodes[0][tri[0]]];
+		const vector3& b = aaPos[stationNodes[0][tri[1]]];
+		const vector3& c = aaPos[stationNodes[0][tri[2]]];
+		const number area2 = (b[0]-a[0])*(c[1]-a[1])
+			- (b[1]-a[1])*(c[0]-a[0]);
+		UG_COND_THROW(std::fabs(area2) <= straightTolerance * straightTolerance,
+		              "Degenerate 2-D triangle in prismatic Inter cross-section.");
+		if (area2 < 0.0) std::swap(tri[1], tri[2]);
+	}
+
+	std::vector<Volume*> interPrisms;
+	for (size_t s = 0; s + 1 < stationNodes.size(); ++s)
+		for (size_t t = 0; t < crossSectionTriangles.size(); ++t)
+		{
+			const PrismTriangle& tri = crossSectionTriangles[t];
+			Prism* prism = *g.create<Prism>(PrismDescriptor(
+				stationNodes[s][tri[0]], stationNodes[s][tri[1]],
+				stationNodes[s][tri[2]], stationNodes[s+1][tri[0]],
+				stationNodes[s+1][tri[1]], stationNodes[s+1][tri[2]]));
+			sh.assign_subset(prism, 5);
+			psh.assign_subset(prism, 1);
+			interPrisms.push_back(prism);
+		}
+	FixOrientation(g, interPrisms.begin(), interPrisms.end(), aaPos);
+
+	for (size_t s = 0; s + 1 < rings.size(); ++s)
+		for (size_t i = 0; i < angularCount; ++i)
+		{
+			const size_t j = (i + 1) % angularCount;
+			FaceDescriptor fd;
+			fd.set_num_vertices(4);
+			fd.set_vertex(0, rings[s][i]);
+			fd.set_vertex(1, rings[s][j]);
+			fd.set_vertex(2, rings[s+1][j]);
+			fd.set_vertex(3, rings[s+1][i]);
+			Face* face = g.get_face(fd);
+			UG_COND_THROW(!face || NumAssociatedVolumes(g, face) != 2,
+			              "A prismatic Basolateral quadrilateral is not one ordinary "
+			              "two-volume face.");
+			sh.assign_subset(face, 2);
+			psh.assign_subset(face, 0);
+		}
+
+	sh.set_subset_name("Membrane", 0);
+	sh.set_subset_name("Lumen", 1);
+	sh.set_subset_name("Basolateral", 2);
+	sh.set_subset_name("Apical", 3);
+	sh.set_subset_name("OuterWall", 4);
+	sh.set_subset_name("Inter", 5);
+	UG_LOGN("Added full swept-prism Inter for straight control: axial stations="
+	        << rings.size() << ", angular vertices=" << angularCount
+	        << ", cross-section triangles=" << crossSectionTriangles.size()
+	        << ", prisms=" << interPrisms.size() << ".");
+}
+
+
+static void add_isolated_inter_to_version2_nephron
+(
+	Grid& g,
+	SubsetHandler& sh,
+	SubsetHandler& psh,
+	Grid::VertexAttachmentAccessor<APosition>& aaPos,
+	Grid::VertexAttachmentAccessor<Attachment<NeuriteProjector::SurfaceParams> >& aaSurfParams,
+	number tetQuality,
+	bool terminalPorts,
+	bool conformingMembraneTransition,
+	int sourceInnerBoundarySubset,
+	bool linkStructuredBasolateral
 )
 {
 	/*
@@ -4897,7 +5882,7 @@ static void add_isolated_inter_to_version2_nephron
 	for (FaceIterator fit = g.begin<Face>(); fit != g.end<Face>(); ++fit)
 	{
 		const int si = sh.get_subset_index(*fit);
-		if (si != 2 && si != 4) continue;
+		if (si != sourceInnerBoundarySubset && si != 4) continue;
 		trustedBoundaryFaces.insert(*fit);
 		Grid::traits<Edge>::secure_container edges;
 		g.associated_elements(edges, *fit);
@@ -4934,8 +5919,9 @@ static void add_isolated_inter_to_version2_nephron
 		const int si = sh.get_subset_index(face);
 		const bool isOuterWall = si == 4;
 		const bool isNephronExterior = !isOuterWall
-			&& NumAssociatedVolumes(g, face) == 1
-			&& (!terminalPorts || si == 2);
+			&& NumAssociatedVolumes(g, face)
+				== (linkStructuredBasolateral ? 1 : 0)
+			&& (!terminalPorts || si == sourceInnerBoundarySubset);
 		if (!isOuterWall && !isNephronExterior) continue;
 
 		FaceDescriptor fd;
@@ -5202,6 +6188,22 @@ static void add_isolated_inter_to_version2_nephron
 		if (!exteriorComponent.count(*vit)) nonExteriorVolumes.push_back(*vit);
 	tg.erase(nonExteriorVolumes.begin(), nonExteriorVolumes.end());
 
+	// In deferred hybrid mode the source shell consists of temporary standalone
+	// triangles. TetGen has consumed them at this point. Remove those destination-
+	// grid placeholders before copying the tetrahedra back, so the recovered
+	// boundary triangles become the unique face objects reused by transition cells.
+	if (!linkStructuredBasolateral)
+	{
+		std::vector<Face*> temporaryShellFaces;
+		for (FaceIterator fit = sh.begin<Face>(sourceInnerBoundarySubset);
+		     fit != sh.end<Face>(sourceInnerBoundarySubset); ++fit)
+			if (NumAssociatedVolumes(g, *fit) == 0)
+				temporaryShellFaces.push_back(*fit);
+		for (size_t i = 0; i < temporaryShellFaces.size(); ++i)
+			trustedBoundaryFaces.erase(temporaryShellFaces[i]);
+		g.erase(temporaryShellFaces.begin(), temporaryShellFaces.end());
+	}
+
 	std::map<Vertex*,Vertex*> tmpToDest = tmpToOrig;
 	auto destVertex = [&] (Vertex* tv) -> Vertex*
 	{
@@ -5430,6 +6432,7 @@ static void add_isolated_inter_to_version2_nephron
 	// refining two independent triangles connects each new midpoint diagonally to
 	// an old coarse-ring corner.
 	std::set<Face*> basolateralQuads;
+	if (linkStructuredBasolateral)
 	for (size_t h = 0; h < membraneHexes.size(); ++h)
 	{
 		for (size_t f = 0; f < 6; ++f)
@@ -5504,6 +6507,25 @@ static void add_isolated_inter_to_version2_nephron
 	        << " structured Membrane hexahedra and linked "
 	        << constrainedBasolateralPairs
 	        << " Basolateral quads to their Inter triangle pairs.");
+	if (!linkStructuredBasolateral)
+	{
+		size_t sharedTransitionFaces = 0;
+		for (std::map<DestTriKey,Face*>::iterator it =
+		     interBoundaryTriangles.begin(); it != interBoundaryTriangles.end(); ++it)
+		{
+			Face* face = it->second;
+			UG_COND_THROW(NumAssociatedVolumes(g, face) != 1,
+			              "Deferred hybrid transition face is not the tetrahedral "
+			              "bulk boundary expected before transition-cell creation.");
+			sh.assign_subset(face, 5);
+			psh.assign_subset(face, 1);
+			trustedBoundaryFaces.insert(face);
+			++sharedTransitionFaces;
+		}
+		UG_LOGN("Prepared " << sharedTransitionFaces
+		        << " tetrahedral bulk boundary faces for deferred conforming "
+		        << "transition-cell creation.");
+	}
 
 	// Faces created implicitly with the copied tetrahedra inherit the subset
 	// handler's default subset (0 == Membrane).  Correct their classification:
@@ -5640,14 +6662,86 @@ static void validate_and_repair_orientation_after_projected_refinement
 		aaSurfParams = NULL
 )
 {
-	const int corrected =
-		FixOrientation(g, g.begin<Volume>(), g.end<Volume>(), aaPos);
+	auto tetSignedVolume = [&] (Vertex* a, Vertex* b, Vertex* c,
+	                           Vertex* d) -> number
+	{
+		vector3 ab, ac, ad, cross;
+		VecSubtract(ab, aaPos[b], aaPos[a]);
+		VecSubtract(ac, aaPos[c], aaPos[a]);
+		VecSubtract(ad, aaPos[d], aaPos[a]);
+		VecCross(cross, ac, ad);
+		return VecProd(ab, cross) / 6.0;
+	};
+	auto scaledCornerJacobian = [&] (Vertex* origin, Vertex* first,
+	                                  Vertex* second, Vertex* third) -> number
+	{
+		vector3 e0, e1, e2, cross;
+		VecSubtract(e0, aaPos[first], aaPos[origin]);
+		VecSubtract(e1, aaPos[second], aaPos[origin]);
+		VecSubtract(e2, aaPos[third], aaPos[origin]);
+		const number denominator = VecLength(e0) * VecLength(e1) * VecLength(e2);
+		if (denominator == 0.0) return 0.0;
+		VecCross(cross, e1, e2);
+		return VecProd(e0, cross) / denominator;
+	};
+	auto prismMinScaledJacobian = [&] (Volume* volume) -> number
+	{
+		UG_COND_THROW(volume->num_vertices() != 6,
+		              "Prism orientation audit received a non-prism volume.");
+		Vertex* a = volume->vertex(0); Vertex* b = volume->vertex(1);
+		Vertex* c = volume->vertex(2); Vertex* d = volume->vertex(3);
+		Vertex* e = volume->vertex(4); Vertex* f = volume->vertex(5);
+		number result = scaledCornerJacobian(a,b,c,d);
+		result = std::min(result, scaledCornerJacobian(b,c,a,e));
+		result = std::min(result, scaledCornerJacobian(c,a,b,f));
+		result = std::min(result, scaledCornerJacobian(d,f,e,a));
+		result = std::min(result, scaledCornerJacobian(e,d,f,b));
+		result = std::min(result, scaledCornerJacobian(f,e,d,c));
+		return result;
+	};
+	size_t correctedPrisms = 0;
+	for (VolumeIterator it = g.begin<Volume>(); it != g.end<Volume>(); ++it)
+	{
+		Volume* volume = *it;
+		if (volume->reference_object_id() != ROID_PRISM) continue;
+		const number beforeFlip = prismMinScaledJacobian(volume);
+		if (beforeFlip >= 0.0) continue;
+		g.flip_orientation(volume);
+		const number afterFlip = prismMinScaledJacobian(volume);
+		if (afterFlip <= 0.0)
+		{
+			UG_LOGN("Unrepairable refined prism at level " << refinementLevel
+			        << ", subset=" << sh.get_subset_index(volume)
+			        << ", min scaled Jacobian before/after flip="
+			        << beforeFlip << "/" << afterFlip << ".");
+			for (size_t i = 0; i < volume->num_vertices(); ++i)
+				UG_LOGN("  prism vertex " << i << ": " << aaPos[volume->vertex(i)]);
+			UG_THROW("Could not repair a negatively ordered refined prism.");
+		}
+		++correctedPrisms;
+	}
+
+	// UG4's generic polyhedral orientation predicate assumes planar wedge/hex
+	// sides. Curved transported prisms and hexahedra can have a valid positive
+	// isoparametric Jacobian while that predicate changes sign under an
+	// arbitrary quad diagonal. Preserve the refiner's ordering and let the
+	// serialized corner-Jacobian validator judge those cells. Retain legacy
+	// repair for tetrahedra, pyramids, and octahedra.
+	std::vector<Volume*> simplexLikeVolumes;
+	for (VolumeIterator it = g.begin<Volume>(); it != g.end<Volume>(); ++it)
+		if ((*it)->reference_object_id() != ROID_PRISM &&
+		    (*it)->reference_object_id() != ROID_HEXAHEDRON)
+			simplexLikeVolumes.push_back(*it);
+	const int corrected = FixOrientation(g, simplexLikeVolumes.begin(),
+	                                     simplexLikeVolumes.end(), aaPos);
 
 	size_t indeterminate = 0;
 	std::map<int, size_t> indeterminateBySubset;
 	for (VolumeIterator it = g.begin<Volume>(); it != g.end<Volume>(); ++it)
 	{
 		Volume* vol = *it;
+		if (vol->reference_object_id() == ROID_PRISM ||
+		    vol->reference_object_id() == ROID_HEXAHEDRON) continue;
 		const bool beforeFlip = CheckOrientation(vol, aaPos);
 		g.flip_orientation(vol);
 		const bool afterFlip = CheckOrientation(vol, aaPos);
@@ -5688,6 +6782,7 @@ static void validate_and_repair_orientation_after_projected_refinement
 
 	UG_LOGN("Projected refinement " << refinementLevel
 	        << " orientation check: corrected " << corrected
+	        << " simplex-like and " << correctedPrisms << " prism"
 	        << " volumes; indeterminate/degenerate volumes: "
 	        << indeterminate << ".");
 	UG_COND_THROW(indeterminate != 0,
@@ -5711,7 +6806,9 @@ static size_t mark_nephron_cross_section_volumes
 	std::set<Edge*>& axialEdges
 )
 {
-	const number axialSectionTolerance = 1e-6;
+	const number axialSectionTolerance = std::max(
+		std::numeric_limits<number>::epsilon() * 128.0,
+		g_nephronGeometryPolicy.parameterTolerance);
 	const int outerWallSubset = (int)(6 * nephronCount);
 	transverseEdges.clear();
 	axialEdges.clear();
@@ -5862,7 +6959,9 @@ static std::map<uint32, std::vector<number> > collect_nephron_axial_sections
 	size_t nephronCount
 )
 {
-	const number axialSectionTolerance = 1e-6;
+	const number axialSectionTolerance = std::max(
+		std::numeric_limits<number>::epsilon() * 128.0,
+		g_nephronGeometryPolicy.parameterTolerance);
 	const int outerWallSubset = (int)(6 * nephronCount);
 	std::map<uint32, std::vector<number> > sections;
 	std::set<Vertex*> tubeVertices;
@@ -5907,7 +7006,9 @@ static size_t count_vertices_on_new_axial_sections
 	const std::map<uint32, std::vector<number> >& allowedSections
 )
 {
-	const number axialSectionTolerance = 1e-6;
+	const number axialSectionTolerance = std::max(
+		std::numeric_limits<number>::epsilon() * 128.0,
+		g_nephronGeometryPolicy.parameterTolerance);
 	const int outerWallSubset = (int)(6 * nephronCount);
 	std::set<Vertex*> unexpected;
 	for (size_t level = 0; level <= grid.top_level(); ++level)
@@ -5978,7 +7079,8 @@ static size_t restore_active_basolateral_children
 		bool outerRadial = true;
 		for (size_t v = 0; v < face->num_vertices(); ++v)
 			outerRadial = outerRadial &&
-				aaSurfParams[face->vertex(v)].radial > 1.0 - 1e-6;
+				aaSurfParams[face->vertex(v)].radial >
+				1.0 - g_nephronGeometryPolicy.parameterTolerance;
 		if (!outerRadial) continue;
 
 		int owner = -1;
@@ -6149,8 +7251,11 @@ static void report_nephron_surface_projection_residual
 	size_t refinementLevel
 )
 {
-	const number endpointTolerance = 1e-7;
-	const number relativeResidualTolerance = 1e-8;
+	const number endpointTolerance = std::max(
+		std::numeric_limits<number>::epsilon() * 128.0,
+		g_nephronGeometryPolicy.parameterTolerance);
+	const number relativeResidualTolerance =
+		g_nephronGeometryPolicy.coordinateRelativeTolerance;
 	size_t checked = 0;
 	size_t limited = 0;
 	number maximumResidual = 0.0;
@@ -6780,7 +7885,8 @@ static size_t assign_indexed_nephron_subsets
 			bool hasInter = false;
 			for (size_t i = 0; i < vols.size(); ++i)
 				hasInter = hasInter || sh.get_subset_index(vols[i]) == interSubset;
-			if (membrane >= 0 && lumen < 0 && liesOnOuterBoxPlane(face))
+			if (membrane >= 0 && lumen < 0 &&
+			    (liesOnOuterBoxPlane(face) || (!hasInter && vols.size() == 1)))
 				newSI = membraneWallBase + membrane; // terminal Membrane--OuterWall contact
 			else if (membrane >= 0 && lumen >= 0)
 				newSI = 6 * membrane + 3; // Lumen--Membrane: Apical
@@ -6798,7 +7904,7 @@ static size_t assign_indexed_nephron_subsets
 			}
 			else if (hasInter && membrane < 0 && lumen < 0 && vols.size() == 1)
 			{
-				if (liesOnOuterBoxPlane(face))
+				if (liesOnOuterBoxPlane(face) || oldSI == 4)
 					newSI = outerWallSubset;
 				else
 				{
@@ -6820,7 +7926,7 @@ static size_t assign_indexed_nephron_subsets
 					}
 				}
 			}
-			else if (oldSI == 4 && liesOnOuterBoxPlane(face))
+			else if (oldSI == 4)
 				newSI = outerWallSubset;
 			else if (oldSI == 1)
 			{
@@ -7320,12 +8426,18 @@ static void import_er_neurites_from_swc_impl
 		create_padded_box_surface(g, sh, aaPos, boxPadding, 4, boxSurfaceRefs,
 		                          &terminalMetadata, &aaSurfParams);
 	if (fillInter)
-		// Tetrahedralize Inter on an isolated copy so TetGen cannot delete or
-		// move projector-backed tube vertices.  Select its conforming branch:
-		// each Membrane hex is replaced by pyramids/tetrahedra whose
-		// Basolateral triangles are the same ordinary face objects used by Inter.
-		add_isolated_inter_to_version2_nephron(g, sh, psh, aaPos,
-			aaSurfParams, interTetQuality, true, true);
+	{
+		if (g_adaptiveNephronMeshing.prismaticInter)
+			add_straight_prismatic_inter_to_version2_nephron(
+				g, sh, psh, aaPos, aaSurfParams, terminalMetadata, boxPadding);
+		else
+			// Tetrahedralize Inter on an isolated copy so TetGen cannot delete or
+			// move projector-backed tube vertices. Retain the established
+			// constrained Basolateral representation for the selectable tet path;
+			// the experimental pyramid/tetra transition is not refinement-safe.
+			add_isolated_inter_to_version2_nephron(g, sh, psh, aaPos,
+				aaSurfParams, interTetQuality, true, false, 2, true);
+	}
 	if (fillInter)
 	{
 		// Keep the duplicate-vertex tolerance proportional to the input SWC
@@ -7338,7 +8450,7 @@ static void import_er_neurites_from_swc_impl
 		UG_COND_THROW(minOuterRadius == std::numeric_limits<number>::max(),
 		              "Nephron SWC has no positive radius for mesh cleanup.");
 		cleanup_completed_nephron_mesh_before_final_subsets(g, aaPos,
-			minOuterRadius * 1e-4);
+			minOuterRadius * g_nephronGeometryPolicy.mergeRadiusFactor);
 	}
 
 	if (indexedNephrons > 0)
@@ -7346,6 +8458,11 @@ static void import_er_neurites_from_swc_impl
 		assign_indexed_nephron_subsets(g, sh, aaPos, aaSurfParams, indexedNephrons);
 		const int tripleJunctionBase = (int)(6 * indexedNephrons + 2);
 		const int membraneWallBase = tripleJunctionBase + (int)indexedNephrons;
+		// The hybrid curved layer and the far tetrahedral box share one Inter
+		// subset. Never attach the neurite projector to that complete subset: the
+		// far-box vertices do not carry neurite coordinates and would collapse onto
+		// the trace. Basolateral and the structured nephron subsets below retain the
+		// exact projector; the conforming exterior layers refine linearly from them.
 		for (size_t i = 0; i < indexedNephrons; ++i)
 		{
 			// Use the same exact neurite map for the internal radial layers as for
@@ -7447,6 +8564,19 @@ static void import_er_neurites_from_swc_impl
 		*dom.grid(), aSP);
 	for (uint i = 0; i < numRefs; ++i)
 	{
+		// The first refinement is projected onto the exact nephron surface.  A
+		// second nonlinear projection at terminal portal rings can overtake the
+		// thin outer corner of an otherwise valid Inter prism and fold one child.
+		// Subdivide the already fitted level-1 geometry linearly from level 2 on;
+		// this retains the curved r1 surface, exact shared topology, and positive
+		// child Jacobians.
+		if (i > 0 && !crossSectionRefinement)
+		{
+			ref->set_projector(SPNULL);
+			UG_LOGN("Refinement level " << i + 1
+			        << ": using linear subdivision of the projector-fitted level "
+			        << i << " geometry.");
+		}
 		std::set<Edge*> transverseEdges;
 		std::set<Edge*> axialEdges;
 		std::map<uint32, std::vector<number> > allowedAxialSections;

@@ -749,8 +749,14 @@ void NeuriteProjector::average_params
 
 	// average t, phi, r
 	t = 0.0;
-	float minRad = 1.0;
-	float maxRad = 0.0;
+	// SurfaceParams::radial is also used by transported exterior layers, where
+	// valid values exceed one. Initializing this interval to [1, 0] silently
+	// pulls a constant exterior-radius face toward the neurite and can make its
+	// refined face center coincide with a volume center. Use an unbounded initial
+	// interval so the same serialized projector supports both interior O-grids
+	// and exterior tubular refinement.
+	float minRad = std::numeric_limits<float>::max();
+	float maxRad = -std::numeric_limits<float>::max();
 	vector2 v(0.0);
 	size_t nForeignParents = 0;
 	std::vector<number> foreignParentRad(8, 0.0);

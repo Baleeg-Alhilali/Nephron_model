@@ -66,7 +66,25 @@ void configure_adaptive_nephron_meshing
 	number interNearEdgeFactor,
 	number interNearDistanceFactor,
 	number interFarDistanceFactor,
-	number interFarEdgeFactor
+	number interFarEdgeFactor,
+	bool prismaticInter,
+	number prismaticInterThickness
+);
+
+/** Configure dimensionless tolerances and automatically scaled radial grading. */
+void configure_nephron_geometry_policy
+(
+	number coordinateRelativeTolerance,
+	number containmentRelativeTolerance,
+	number parameterTolerance,
+	number mergeRadiusFactor,
+	number terminalSnapRadiusFactor,
+	number straightnessRadiusFactor,
+	number angularSpacingFactor,
+	size_t minimumInterLayers,
+	size_t maximumInterLayers,
+	number interLayersPerSurfaceEdge,
+	number interRadialGrowth
 );
 
 
