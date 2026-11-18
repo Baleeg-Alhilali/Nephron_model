@@ -7885,10 +7885,7 @@ static size_t assign_indexed_nephron_subsets
 			bool hasInter = false;
 			for (size_t i = 0; i < vols.size(); ++i)
 				hasInter = hasInter || sh.get_subset_index(vols[i]) == interSubset;
-			if (membrane >= 0 && lumen < 0 &&
-			    (liesOnOuterBoxPlane(face) || (!hasInter && vols.size() == 1)))
-				newSI = membraneWallBase + membrane; // terminal Membrane--OuterWall contact
-			else if (membrane >= 0 && lumen >= 0)
+			if (membrane >= 0 && lumen >= 0)
 				newSI = 6 * membrane + 3; // Lumen--Membrane: Apical
 			else if (membrane >= 0 && hasInter)
 				newSI = 6 * membrane + 2; // outer Membrane: Basolateral
@@ -7902,6 +7899,9 @@ static size_t assign_indexed_nephron_subsets
 					: vertexAdjacentMembrane(face);
 				if (owner >= 0) newSI = 6 * owner + 2;
 			}
+			else if (membrane >= 0 && lumen < 0 &&
+			         (liesOnOuterBoxPlane(face) || (!hasInter && vols.size() == 1)))
+				newSI = membraneWallBase + membrane; // terminal Membrane--OuterWall contact
 			else if (hasInter && membrane < 0 && lumen < 0 && vols.size() == 1)
 			{
 				if (liesOnOuterBoxPlane(face) || oldSI == 4)
@@ -7941,6 +7941,51 @@ static size_t assign_indexed_nephron_subsets
 			}
 		}
 		if (newSI >= 0) sh.assign_subset(face, newSI);
+	}
+
+	// MembraneWall is only the planar terminal annulus where a Membrane tube
+	// reaches the OuterWall.  In particular, the longitudinal structured
+	// Basolateral quads are one-sided in ordinary face adjacency because their
+	// Inter counterparts are constrained triangles.  A former ordering of the
+	// rules above therefore mislabeled every such quad as MembraneWall.  Audit
+	// the completed classification here for both the single-nephron (N=1) and
+	// multi-nephron entry points so that bug cannot be serialized again.
+	std::vector<size_t> membraneWallFaces(expectedNephrons, 0);
+	const number terminalParameterTolerance = std::max<number>(
+		1e-7, g_nephronGeometryPolicy.parameterTolerance * 10.0);
+	for (FaceIterator it = g.begin<Face>(); it != g.end<Face>(); ++it)
+	{
+		Face* face = *it;
+		const int si = sh.get_subset_index(face);
+		if (si < membraneWallBase ||
+		    si >= membraneWallBase + (int)expectedNephrons)
+			continue;
+		const int component = si - membraneWallBase;
+		UG_COND_THROW(adjacentMembrane(face) != component ||
+		              adjacentLumen(face) >= 0,
+		              "MembraneWall face is not owned exclusively by its "
+		              "Membrane component.");
+		bool atInlet = true;
+		bool atOutlet = true;
+		for (size_t i = 0; i < face->num_vertices(); ++i)
+		{
+			const number axial = aaSurfParams[face->vertex(i)].axial;
+			atInlet = atInlet && std::fabs(axial) <= terminalParameterTolerance;
+			atOutlet = atOutlet &&
+				std::fabs(axial - 1.0) <= terminalParameterTolerance;
+		}
+		UG_COND_THROW(!atInlet && !atOutlet,
+		              "MembraneWall contains a non-terminal face; longitudinal "
+		              "Membrane faces must remain Basolateral.");
+		++membraneWallFaces[(size_t)component];
+	}
+	for (size_t component = 0; component < expectedNephrons; ++component)
+	{
+		UG_COND_THROW(membraneWallFaces[component] == 0,
+		              "Missing terminal MembraneWall faces for nephron "
+		              << component + 1 << ".");
+		UG_LOGN("Nephron " << component + 1 << " terminal MembraneWall faces: "
+		        << membraneWallFaces[component] << ".");
 	}
 	UG_COND_THROW(invalidOpenInterFaces != 0,
 	              "Detected " << invalidOpenInterFaces
